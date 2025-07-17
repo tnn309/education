@@ -1,0 +1,40 @@
+@model List<EducationSystem.Models.Teacher>
+
+@{
+    ViewData["Title"] = "Quản lý giáo viên";
+}
+
+<h2>Quản lý giáo viên</h2>
+
+@if (Model != null && Model.Any())
+{
+    <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">ID</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Họ tên</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Email</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Chuyên môn</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Kinh nghiệm</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var teacher in Model)
+            {
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.TeacherId</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.FullName</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Email</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Specialization</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Experience năm</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@(teacher.IsActive ? "Hoạt động" : "Không hoạt động")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Không có giáo viên nào.</p>
+}

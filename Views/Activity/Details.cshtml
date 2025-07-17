@@ -1,0 +1,117 @@
+@model EducationSystem.Models.Activity
+@using System.Security.Claims
+@inject Microsoft.AspNetCore.Identity.UserManager<EducationSystem.Models.ApplicationUser> UserManager
+
+@{
+    ViewData["Title"] = "Chi tiết hoạt động";
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+
+<h2>Chi tiết hoạt động: @Model.Title</h2>
+
+@if (Model != null)
+{
+    <div class="activity-details">
+        <h3>@Model.Title</h3>
+        <p><strong>Mô tả:</strong> @Model.Description</p>
+        <p><strong>Loại:</strong> @(Model.Type == "free" ? "Miễn phí" : "Trả phí")</p>
+        <p><strong>Giá:</strong> @(Model.Price == 0 ? "Miễn phí" : $"{Model.Price:N0} VNĐ")</p>
+        <p><strong>Giáo viên:</strong> @(Model.Teacher?.FullName ?? "Đang cập nhật")</p>
+        <p><strong>Địa điểm:</strong> @Model.Location</p>
+        <p><strong>Ngày:</strong> @Model.StartDate.ToString("dd/MM/yyyy") - @Model.EndDate.ToString("dd/MM/yyyy")</p>
+        <p><strong>Thời gian:</strong> @Model.StartTime.ToString(@"hh\:mm") - @Model.EndTime.ToString(@"hh\:mm")</p>
+        <p><strong>Số chỗ:</strong> @Model.CurrentParticipants / @Model.MaxParticipants (Còn @Model.AvailableSlots chỗ)</p>
+        <p><strong>Độ tuổi:</strong> @Model.MinAge - @Model.MaxAge tuổi</p>
+        <p><strong>Kỹ năng:</strong> @Model.Skills</p>
+        <p><strong>Yêu cầu:</strong> @Model.Requirements</p>
+        <p><strong>Trạng thái:</strong> @Model.Status</p>
+
+        @if (ViewBag.CanRegister)
+        {
+            <form asp-controller="Activity" asp-action="Register" method="post" class="form-group">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                @if (User.IsInRole("Parent"))
+                {
+                    <label for="studentId">Đăng ký cho học sinh:</label>
+                    <select name="studentId" id="studentId">
+                        <option value="@(userId)">Bản thân (Phụ huynh)</option>
+                        @if (ViewBag.StudentsForParent != null)
+                        {
+                            @foreach (var student in (List<ApplicationUser>)ViewBag.StudentsForParent)
+                            {
+                                <option value="@student.Id">@student.FullName (@student.UserName)</option>
+                            }
+                        }
+                    </select>
+                }
+                <button type="submit">Đăng ký hoạt động này</button>
+            </form>
+        }
+        else if (ViewBag.IsRegistered)
+        {
+            <p>Bạn đã đăng ký hoạt động này.</p>
+        }
+        else if (Model.IsFull)
+        {
+            <p>Hoạt động đã đầy.</p>
+        }
+        else if (!Model.IsActive)
+        {
+            <p>Hoạt động không còn mở đăng ký.</p>
+        }
+        else if (!(User.Identity?.IsAuthenticated ?? false))
+        {
+            <p><a asp-controller="Account" asp-action="Login">Đăng nhập</a> để đăng ký hoạt động.</p>
+        }
+
+        <div class="interactions">
+            <h4>Tương tác</h4>
+            <p>Lượt thích: @Model.LikesCount</p>
+            <p>Bình luận: @Model.CommentsCount</p>
+
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                <form asp-controller="Activity" asp-action="Like" method="post" class="form-group">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                    <button type="submit">@(ViewBag.HasLiked ? "Bỏ thích" : "Thích")</button>
+                </form>
+
+                <form asp-controller="Activity" asp-action="Comment" method="post" class="form-group">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                    <label for="commentContent">Bình luận của bạn:</label>
+                    <textarea id="commentContent" name="content" rows="3"></textarea>
+                    <button type="submit">Gửi bình luận</button>
+                </form>
+            }
+            else
+            {
+                <p><a asp-controller="Account" asp-action="Login">Đăng nhập</a> để thích hoặc bình luận.</p>
+            }
+
+            <h4>Các bình luận:</h4>
+            @if (Model.Interactions != null && Model.Interactions.Any(i => i.InteractionType == "Comment"))
+            {
+                <ul>
+                    @foreach (var comment in Model.Interactions.Where(i => i.InteractionType == "Comment").OrderByDescending(i => i.CreatedAt))
+                    {
+                        <li>
+                            <strong>@(comment.User?.FullName ?? comment.User?.UserName ?? "Người dùng ẩn danh")</strong> (@comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")):
+                            <p>@comment.Content</p>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>Chưa có bình luận nào.</p>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <p>Không tìm thấy chi tiết hoạt động.</p>
+}

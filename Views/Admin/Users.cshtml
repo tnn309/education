@@ -1,0 +1,58 @@
+@model List<EducationSystem.Models.ApplicationUser>
+@inject Microsoft.AspNetCore.Identity.UserManager<EducationSystem.Models.ApplicationUser> UserManager
+
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+<h2>Quản lý người dùng</h2>
+
+@if (Model != null && Model.Any())
+{
+    <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">ID</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Tên đăng nhập</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Họ tên</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Email</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Ngày tạo</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Vai trò</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phụ huynh của</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@user.Id</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@user.UserName</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@user.FullName</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@user.Email</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">@user.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        @{
+                            var roles = await UserManager.GetRolesAsync(user);
+                            <span>@string.Join(", ", roles)</span>
+                        }
+                    </td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">
+                        @if (!string.IsNullOrEmpty(user.ParentId))
+                        {
+                            var parentUser = await UserManager.FindByIdAsync(user.ParentId);
+                            <span>@(parentUser?.FullName ?? parentUser?.UserName ?? "N/A")</span>
+                        }
+                        else
+                        {
+                            <span>N/A</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Không có người dùng nào.</p>
+}

@@ -1,0 +1,60 @@
+@model List<EducationSystem.Models.Registration>
+
+@{
+    ViewData["Title"] = "Đăng ký của tôi";
+}
+
+<h2>Đăng ký của tôi</h2>
+
+@if (Model != null && Model.Any())
+{
+    <div class="registration-list">
+        @foreach (var reg in Model)
+        {
+            <div class="activity-card">
+                <h3>Hoạt động: @reg.Activity?.Title</h3>
+                <p><strong>Ngày đăng ký:</strong> @reg.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</p>
+                <p><strong>Trạng thái:</strong> @reg.Status</p>
+                <p><strong>Trạng thái thanh toán:</strong> @reg.PaymentStatus</p>
+                <p><strong>Trạng thái tham dự:</strong> @reg.AttendanceStatus</p>
+                @if (!string.IsNullOrEmpty(reg.Notes))
+                {
+                    <p><strong>Ghi chú:</strong> @reg.Notes</p>
+                }
+                @if (reg.Student != null && reg.Student.Id != reg.UserId)
+                {
+                    <p><strong>Đăng ký cho:</strong> @reg.Student.FullName (@reg.Student.UserName)</p>
+                }
+                @if (reg.Parent != null)
+                {
+                    <p><strong>Phụ huynh:</strong> @reg.Parent.FullName (@reg.Parent.UserName)</p>
+                }
+
+                @if (reg.Status != "Cancelled" && reg.Status != "Rejected" && reg.Activity != null && reg.Activity.StartDate > DateTime.UtcNow.Date)
+                {
+                    <form asp-controller="Registration" asp-action="CancelRegistration" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@reg.RegistrationId" />
+                        <button type="submit">Hủy đăng ký</button>
+                    </form>
+                }
+                else if (reg.Status == "Cancelled")
+                {
+                    <p style="color: red; font-weight: bold;">Đăng ký này đã bị hủy.</p>
+                }
+                else if (reg.Status == "Rejected")
+                {
+                    <p style="color: orange; font-weight: bold;">Đăng ký này đã bị từ chối.</p>
+                }
+                else if (reg.Activity != null && reg.Activity.StartDate <= DateTime.UtcNow.Date)
+                {
+                    <p>Không thể hủy đăng ký cho hoạt động đã bắt đầu.</p>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>Bạn chưa có đăng ký nào.</p>
+}

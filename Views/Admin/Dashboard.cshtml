@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Bảng điều khiển Admin";
+}
+
+<h2>Bảng điều khiển Admin</h2>
+
+<div class="dashboard-stats">
+    <div class="activity-card">
+        <h3>Tổng số hoạt động</h3>
+        <p>@ViewBag.TotalActivities</p>
+    </div>
+    <div class="activity-card">
+        <h3>Hoạt động đã xuất bản</h3>
+        <p>@ViewBag.PublishedActivities</p>
+    </div>
+    <div class="activity-card">
+        <h3>Tổng số người dùng</h3>
+        <p>@ViewBag.TotalUsers</p>
+    </div>
+    <div class="activity-card">
+        <h3>Tổng số đăng ký</h3>
+        <p>@ViewBag.TotalRegistrations</p>
+    </div>
+    <div class="activity-card">
+        <h3>Đăng ký chờ duyệt</h3>
+        <p>@ViewBag.PendingRegistrations</p>
+    </div>
+    <div class="activity-card">
+        <h3>Tổng số giáo viên</h3>
+        <p>@ViewBag.TotalTeachers</p>
+    </div>
+    <div class="activity-card">
+        <h3>Tổng doanh thu</h3>
+        <p>@($"{ViewBag.TotalRevenue:N0} VNĐ")</p>
+    </div>
+</div>
+
+<h3 style="margin-top: 2rem;">Các liên kết quản lý nhanh:</h3>
+<ul>
+    <li><a asp-controller="Admin" asp-action="Users">Quản lý người dùng</a></li>
+    <li><a asp-controller="Admin" asp-action="Teachers">Quản lý giáo viên</a></li>
+    <li><a asp-controller="Registration" asp-action="ManageRegistrations">Quản lý đăng ký</a></li>
+    <li><a asp-controller="Activity" asp-action="Create">Tạo hoạt động mới</a></li>
+</ul>

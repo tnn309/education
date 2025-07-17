@@ -1,0 +1,61 @@
+@model EducationSystem.ViewModels.ActivityListViewModel
+
+@{
+    ViewData["Title"] = "Danh sách hoạt động";
+}
+
+<h2>Danh sách hoạt động</h2>
+
+<form asp-controller="Activity" asp-action="List" method="get" class="form-group">
+    <label for="search">Tìm kiếm hoạt động:</label>
+    <input type="text" id="search" name="search" value="@Model.SearchQuery" placeholder="Nhập từ khóa tìm kiếm..." />
+    
+    <label for="sortBy">Sắp xếp theo:</label>
+    <select asp-for="SortBy">
+        <option value="newest">Mới nhất</option>
+        <option value="oldest">Cũ nhất</option>
+        <option value="price_low">Giá thấp nhất</option>
+        <option value="price_high">Giá cao nhất</option>
+        <option value="start_date">Ngày bắt đầu</option>
+        <option value="popular">Phổ biến nhất</option>
+    </select>
+    <button type="submit">Tìm kiếm & Sắp xếp</button>
+</form>
+
+@if (Model.Activities != null && Model.Activities.Any())
+{
+    <div class="activity-list">
+        @foreach (var activity in Model.Activities)
+        {
+            <div class="activity-card">
+                <h3><a asp-controller="Activity" asp-action="Details" asp-route-id="@activity.ActivityId">@activity.Title</a></h3>
+                <p><strong>Loại:</strong> @(activity.Type == "free" ? "Miễn phí" : "Trả phí")</p>
+                <p><strong>Giá:</strong> @(activity.Price == 0 ? "Miễn phí" : $"{activity.Price:N0} VNĐ")</p>
+                <p><strong>Giáo viên:</strong> @(activity.Teacher?.FullName ?? "Đang cập nhật")</p>
+                <p><strong>Ngày:</strong> @activity.StartDate.ToString("dd/MM/yyyy") - @activity.EndDate.ToString("dd/MM/yyyy")</p>
+                <p><strong>Thời gian:</strong> @activity.StartTime.ToString(@"hh\:mm") - @activity.EndTime.ToString(@"hh\:mm")</p>
+                <p><strong>Số chỗ còn lại:</strong> @activity.AvailableSlots / @activity.MaxParticipants</p>
+                <p>@activity.Description.Substring(0, Math.Min(activity.Description.Length, 100)) <a asp-controller="Activity" asp-action="Details" asp-route-id="@activity.ActivityId">Xem chi tiết</a></p>
+            </div>
+        }
+    </div>
+
+    <div class="pagination">
+        @if (Model.HasPreviousPage)
+        {
+            <a asp-controller="Activity" asp-action="List" asp-route-page="@(Model.CurrentPage - 1)" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy">Trước</a>
+        }
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <a asp-controller="Activity" asp-action="List" asp-route-page="@i" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy" class="@(i == Model.CurrentPage ? "active" : "")">@i</a>
+        }
+        @if (Model.HasNextPage)
+        {
+            <a asp-controller="Activity" asp-action="List" asp-route-page="@(Model.CurrentPage + 1)" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy">Tiếp</a>
+        }
+    </div>
+}
+else
+{
+    <p>Không tìm thấy hoạt động nào.</p>
+}

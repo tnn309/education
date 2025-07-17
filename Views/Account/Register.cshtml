@@ -1,0 +1,85 @@
+@model EducationSystem.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Đăng ký tài khoản";
+}
+
+<h2>Đăng ký tài khoản</h2>
+
+<form asp-controller="Account" asp-action="Register" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="alert alert-error"></div>
+
+    <div class="form-group">
+        <label asp-for="Username">Tên Đăng kí</label>
+        <input asp-for="Username" />
+        <span asp-validation-for="Username" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Email"></label>
+        <input asp-for="Email" type="email" />
+        <span asp-validation-for="Email" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="FullName"></label>
+        <input asp-for="FullName" />
+        <span asp-validation-for="FullName" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="DateOfBirth"></label>
+        <input asp-for="DateOfBirth" type="date" />
+        <span asp-validation-for="DateOfBirth" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Address"></label>
+        <input asp-for="Address" />
+        <span asp-validation-for="Address" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Password"></label>
+        <input asp-for="Password" type="password" />
+        <span asp-validation-for="Password" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="ConfirmPassword"></label>
+        <input asp-for="ConfirmPassword" type="password" />
+        <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Role"></label>
+        <select asp-for="Role" id="Role">
+            <option value="Parent">Phụ huynh</option>
+            <option value="Student">Học sinh</option>
+        </select>
+        <span asp-validation-for="Role" class="field-validation-error"></span>
+    </div>
+    <div class="form-group" id="parentUsernameGroup" style="@(Model.Role == "Student" ? "" : "display:none;")">
+        <label asp-for="ParentUsername"></label>
+        <input asp-for="ParentUsername" placeholder="Chỉ điền nếu là học sinh" />
+        <span asp-validation-for="ParentUsername" class="field-validation-error"></span>
+    </div>
+    <div class="form-group">
+        <button type="submit">Đăng ký</button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var roleSelect = document.getElementById('Role');
+        var parentUsernameGroup = document.getElementById('parentUsernameGroup');
+
+        function toggleParentUsernameField() {
+            if (roleSelect.value === 'Student') {
+                parentUsernameGroup.style.display = 'block';
+            } else {
+                parentUsernameGroup.style.display = 'none';
+            }
+        }
+
+        // Initial check
+        toggleParentUsernameField();
+
+        // Add event listener for changes
+        roleSelect.addEventListener('change', toggleParentUsernameField);
+    });
+</script>

@@ -1,0 +1,44 @@
+@model List<EducationSystem.Models.CartItem>
+
+@{
+    ViewData["Title"] = "Giỏ hàng của tôi";
+}
+
+<h2>Giỏ hàng của tôi</h2>
+
+@if (Model != null && Model.Any())
+{
+    <div class="cart-items">
+        @foreach (var item in Model)
+        {
+            <div class="activity-card">
+                <h3>@item.Activity?.Title</h3>
+                <p><strong>Giá:</strong> @(item.Activity?.Price == null || item.Activity.Price == 0 ? "Miễn phí" : $"{item.Activity.Price:N0} VNĐ")</p>
+                <p><strong>Thêm vào lúc:</strong> @item.AddedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                <p><strong>Trạng thái:</strong> @(item.IsPaid ? "Đã thanh toán" : "Chưa thanh toán")</p>
+
+                @if (!item.IsPaid)
+                {
+                    <form asp-controller="Cart" asp-action="Checkout" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.CartItemId" />
+                        <button type="submit">Thanh toán</button>
+                    </form>
+                    <form asp-controller="Cart" asp-action="RemoveFromCart" method="post" style="display:inline; margin-left: 10px;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.CartItemId" />
+                        <button type="submit">Xóa khỏi giỏ hàng</button>
+                    </form>
+                }
+                else
+                {
+                    <p style="color: green; font-weight: bold;">Đã thanh toán</p>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>Giỏ hàng của bạn trống.</p>
+}
