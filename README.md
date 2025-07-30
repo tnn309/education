@@ -20,7 +20,7 @@ Education là một ứng dụng web được phát triển bằng ASP.NET Core 
 
 ## Yêu cầu hệ thống
 - **.NET SDK**: Phiên bản 9.0 hoặc cao hơn.
-- **PostgreSQL**: Phiên bản 12 hoặc cao hơn.
+- **PostgreSQL**: Phiên bản 17.
 - **Công cụ dòng lệnh**: `dotnet` (đã cài đặt).
 - **IDE**: Visual Studio, Visual Studio Code, hoặc tương đương.
 
