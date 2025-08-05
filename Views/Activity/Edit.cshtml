@@ -1,23 +1,31 @@
 @model EducationSystem.Models.Activity
 @{
-    ViewData["Title"] = "Tạo hoạt động mới";
+    ViewData["Title"] = "Chỉnh sửa hoạt động";
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="card shadow">
             <div class="card-header">
-                <h3 class="mb-0"><i class="fas fa-plus"></i> Tạo hoạt động mới</h3>
+                <h3 class="mb-0"><i class="fas fa-edit"></i> Chỉnh sửa hoạt động: @Model.Title</h3>
             </div>
             <div class="card-body">
-                <form asp-action="Create" method="post">
+                <form asp-action="Edit" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="ActivityId" />
+                    <input type="hidden" asp-for="CreatedAt" />
+                    <input type="hidden" asp-for="CreatorId" />
+                    <input type="hidden" asp-for="LikesCount" />
+                    <input type="hidden" asp-for="CommentsCount" />
+                    <input type="hidden" asp-for="CurrentParticipants" />
+                    <input type="hidden" asp-for="IsFull" />
+                    <input type="hidden" asp-for="Status" />
 
                     <!-- Basic Information -->
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label asp-for="Title" class="form-label"></label>
-                            <input asp-for="Title" class="form-control" placeholder="Nhập tiêu đề hoạt động" />
+                            <input asp-for="Title" class="form-control" />
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -32,15 +40,15 @@
 
                     <div class="mb-3">
                         <label asp-for="Description" class="form-label"></label>
-                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Mô tả chi tiết về hoạt động"></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6 mb-3" id="priceDiv" style="display: none;">
+                        <div class="col-md-6 mb-3" id="priceDiv" style="display: @(Model.Type == "paid" ? "block" : "none");">
                             <label asp-for="Price" class="form-label"></label>
                             <div class="input-group">
-                                <input asp-for="Price" class="form-control" placeholder="0" />
+                                <input asp-for="Price" class="form-control" />
                                 <span class="input-group-text">VND</span>
                             </div>
                             <span asp-validation-for="Price" class="text-danger"></span>
@@ -75,18 +83,18 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label asp-for="Location" class="form-label"></label>
-                            <input asp-for="Location" class="form-control" placeholder="Địa điểm tổ chức" />
+                            <input asp-for="Location" class="form-control" />
                             <span asp-validation-for="Location" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label asp-for="TeacherId" class="form-label">Giáo viên</label>
                             <select asp-for="TeacherId" class="form-select">
-                                <option value="">-- Ch���n giáo viên --</option>
+                                <option value="">-- Chọn giáo viên --</option>
                                 @if (ViewBag.Teachers != null)
                                 {
                                     @foreach (var teacher in ViewBag.Teachers)
                                     {
-                                        <option value="@teacher.TeacherId">@teacher.FullName</option>
+                                        <option value="@teacher.TeacherId" selected="@(Model.TeacherId == teacher.TeacherId)">@teacher.FullName</option>
                                     }
                                 }
                             </select>
@@ -98,22 +106,22 @@
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label asp-for="StartDate" class="form-label"></label>
-                            <input asp-for="StartDate" class="form-control" type="date" />
+                            <input asp-for="StartDate" class="form-control" type="date" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
                             <span asp-validation-for="StartDate" class="text-danger"></span>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label asp-for="EndDate" class="form-label"></label>
-                            <input asp-for="EndDate" class="form-control" type="date" />
+                            <input asp-for="EndDate" class="form-control" type="date" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
                             <span asp-validation-for="EndDate" class="text-danger"></span>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label asp-for="StartTime" class="form-label"></label>
-                            <input asp-for="StartTime" class="form-control" type="time" />
+                            <input asp-for="StartTime" class="form-control" type="time" value="@Model.StartTime.ToString(@"hh\:mm")" />
                             <span asp-validation-for="StartTime" class="text-danger"></span>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label asp-for="EndTime" class="form-label"></label>
-                            <input asp-for="EndTime" class="form-control" type="time" />
+                            <input asp-for="EndTime" class="form-control" type="time" value="@Model.EndTime.ToString(@"hh\:mm")" />
                             <span asp-validation-for="EndTime" class="text-danger"></span>
                         </div>
                     </div>
@@ -122,12 +130,12 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label asp-for="Skills" class="form-label"></label>
-                            <textarea asp-for="Skills" class="form-control" rows="3" placeholder="Kỹ năng học được từ hoạt động này"></textarea>
+                            <textarea asp-for="Skills" class="form-control" rows="3"></textarea>
                             <span asp-validation-for="Skills" class="text-danger"></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label asp-for="Requirements" class="form-label"></label>
-                            <textarea asp-for="Requirements" class="form-control" rows="3" placeholder="Yêu cầu đặc biệt (nếu có)"></textarea>
+                            <textarea asp-for="Requirements" class="form-control" rows="3"></textarea>
                             <span asp-validation-for="Requirements" class="text-danger"></span>
                         </div>
                     </div>
@@ -138,7 +146,7 @@
                             <i class="fas fa-arrow-left"></i> Quay lại
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Tạo hoạt động
+                            <i class="fas fa-save"></i> Lưu thay đổi
                         </button>
                     </div>
                 </form>
@@ -153,24 +161,6 @@
         document.getElementById('typeSelect').addEventListener('change', function() {
             const priceDiv = document.getElementById('priceDiv');
             if (this.value === 'paid') {
-                priceDiv.style.display = 'block';
-            } else {
-                priceDiv.style.display = 'none';
-            }
-        });
-
-        // Set default values and initial display for priceDiv
-        document.addEventListener('DOMContentLoaded', function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.querySelector('input[name="StartDate"]').value = today;
-            document.querySelector('input[name="EndDate"]').value = today;
-            document.querySelector('input[name="StartTime"]').value = '09:00';
-            document.querySelector('input[name="EndTime"]').value = '11:00';
-
-            // Initial display for priceDiv based on default type
-            const typeSelect = document.getElementById('typeSelect');
-            const priceDiv = document.getElementById('priceDiv');
-            if (typeSelect.value === 'paid') {
                 priceDiv.style.display = 'block';
             } else {
                 priceDiv.style.display = 'none';

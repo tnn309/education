@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace EducationSystem.Controllers
 {
+    [Authorize]
     public class ActivityController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -31,563 +32,354 @@ namespace EducationSystem.Controllers
         {
             bool datesOverlap = newActivity.StartDate <= existingActivity.EndDate && newActivity.EndDate >= existingActivity.StartDate;
             if (!datesOverlap) return false;
-            return newActivity.StartTime < newActivity.EndTime && existingActivity.StartTime < existingActivity.EndTime;
+            
+            // Check time overlap only if dates overlap
+            return (newActivity.StartTime < existingActivity.EndTime && newActivity.EndTime > existingActivity.StartTime);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> List(string filter = "all", int page = 1, string search = "", string sortBy = "newest")
+        // GET: Activity/List
+        [AllowAnonymous]
+        public async Task<IActionResult> List(string searchTerm, int? teacherId, string category, int pageNumber = 1, int pageSize = 6)
         {
-            try
+            IQueryable<Activity> activities = _context.Activities
+                .Include(a => a.Teacher)
+                .Include(a => a.Creator)
+                .Include(a => a.Interactions); // Include interactions for like/comment counts
+
+            if (!string.IsNullOrEmpty(searchTerm))
             {
-                if (page < 1) page = 1;
-                const int pageSize = 9;
-                ViewBag.CurrentFilter = filter;
-                ViewBag.SearchQuery = search;
-                ViewBag.SortBy = sortBy;
-
-                var query = _context.Activities
-                    .Include(a => a.Teacher)
-                    .Include(a => a.Registrations)
-                    .Include(a => a.Interactions)
-                    .Where(a => a.Status == "Published"); // Only show published activities
-
-                if (!string.IsNullOrEmpty(search))
-                {
-                    query = query.Where(a => a.Title.Contains(search) ||
-                                           a.Description.Contains(search) ||
-                                           (a.Skills != null && a.Skills.Contains(search)));
-                }
-
-                switch (filter)
-                {
-                    case "free":
-                        query = query.Where(a => a.Type == "free");
-                        break;
-                    case "paid":
-                        query = query.Where(a => a.Type == "paid");
-                        break;
-                    case "available":
-                        query = query.Where(a => a.Registrations.Count(r => r.Status == "Approved") < a.MaxParticipants);
-                        break;
-                    case "registered":
-                        if (User.Identity?.IsAuthenticated == true)
-                        {
-                            var userId = GetUserId();
-                            query = query.Where(a => a.Registrations.Any(r => (r.StudentId == userId || r.ParentId == userId) && r.Status == "Approved"));
-                        }
-                        else
-                        {
-                            query = query.Where(a => false);
-                        }
-                        break;
-                }
-
-                query = sortBy switch
-                {
-                    "oldest" => query.OrderBy(a => a.CreatedAt),
-                    "price_low" => query.OrderBy(a => a.Price),
-                    "price_high" => query.OrderByDescending(a => a.Price),
-                    "start_date" => query.OrderBy(a => a.StartDate),
-                    "popular" => query.OrderByDescending(a => a.Interactions.Count(i => i.InteractionType == "Like")),
-                    _ => query.OrderByDescending(a => a.CreatedAt)
-                };
-
-                var totalCount = await query.CountAsync();
-                var model = new ActivityListViewModel
-                {
-                    Activities = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(),
-                    CurrentPage = page,
-                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize),
-                    CurrentFilter = filter,
-                    SearchQuery = search,
-                    SortBy = sortBy
-                };
-
-                return View(model);
+                activities = activities.Where(a => a.Title.Contains(searchTerm) || a.Description.Contains(searchTerm));
             }
-            catch (Exception ex)
+
+            if (teacherId.HasValue)
             {
-                _logger.LogError(ex, "Lỗi khi tải danh sách hoạt động với filter {Filter}", filter);
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return RedirectToAction("Index", "Home");
+                activities = activities.Where(a => a.TeacherId == teacherId.Value);
             }
-        }
 
-        [HttpGet]
-        public async Task<IActionResult> Details(int id)
-        {
-            try
+            if (!string.IsNullOrEmpty(category))
             {
-                var activity = await _context.Activities
-                    .Include(a => a.Teacher)
-                    .Include(a => a.Creator)
-                    .Include(a => a.Registrations)
-                        .ThenInclude(r => r.Student)
-                    .Include(a => a.Interactions)
-                        .ThenInclude(i => i.User)
-                    .FirstOrDefaultAsync(a => a.ActivityId == id);
-
-                if (activity == null)
-                {
-                    _logger.LogWarning("Không tìm thấy hoạt động với ID: {ActivityId}", id);
-                    return NotFound();
-                }
-
-                var userId = GetUserId();
-                ViewBag.IsRegistered = User.Identity?.IsAuthenticated == true &&
-                    await _context.Registrations.AnyAsync(r => (r.StudentId == userId || r.ParentId == userId) && r.ActivityId == id && r.Status != "Cancelled");
-
-                ViewBag.HasLiked = User.Identity?.IsAuthenticated == true &&
-                    await _context.Interactions.AnyAsync(i => i.UserId == userId && i.ActivityId == id && i.InteractionType == "Like");
-
-                // Chỉ cho phép học sinh đăng ký
-                ViewBag.CanRegister = User.Identity?.IsAuthenticated == true &&
-                    !ViewBag.IsRegistered && activity.IsActive && !activity.IsFull &&
-                    User.IsInRole("Student");
-
-                return View(activity);
+                activities = activities.Where(a => a.Category == category);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi tải chi tiết hoạt động ID: {ActivityId}", id);
-                TempData["Error"] = "Đã xảy ra lỗi khi tải chi tiết. Vui lòng thử lại.";
-                return RedirectToAction("Index", "Home");
-            }
-        }
 
-        [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create()
-        {
-            ViewBag.Teachers = await _context.Teachers
-                .Where(t => t.IsActive)
-                .Select(t => new { t.TeacherId, t.FullName })
+            // Get current user ID for like status
+            var currentUserId = _userManager.GetUserId(User);
+
+            var totalCount = await activities.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var pagedActivities = await activities
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
-            return View(new Activity());
+
+            foreach (var activity in pagedActivities)
+            {
+                activity.CurrentRegistrationsCount = await _context.Registrations
+                    .CountAsync(r => r.ActivityId == activity.Id && r.Status == "Confirmed");
+                activity.LikesCount = activity.Interactions.Count(i => i.Type == "Like");
+                activity.CommentsCount = activity.Interactions.Count(i => i.Type == "Comment");
+                activity.IsLikedByUser = !string.IsNullOrEmpty(currentUserId) && activity.Interactions.Any(i => i.Type == "Like" && i.UserId == currentUserId);
+            }
+
+            var viewModel = new ActivityListViewModel
+            {
+                Activities = pagedActivities,
+                PageNumber = pageNumber,
+                TotalPages = totalPages,
+                SearchTerm = searchTerm,
+                TeacherId = teacherId,
+                Category = category
+            };
+
+            ViewBag.Teachers = await _context.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            ViewBag.Categories = await _context.Activities.Select(a => a.Category).Distinct().ToListAsync();
+
+            return View(viewModel);
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Activity activity)
+        // GET: Activity/Details/5
+        [AllowAnonymous]
+        public async Task<IActionResult> Details(int? id)
         {
-            // Đảm bảo StartDate và EndDate có Kind là UTC trước khi kiểm tra ModelState
-            // Mặc dù chúng là Date trong DB, Npgsql vẫn có thể kiểm tra Kind của DateTime
-            activity.StartDate = DateTime.SpecifyKind(activity.StartDate, DateTimeKind.Utc);
-            activity.EndDate = DateTime.SpecifyKind(activity.EndDate, DateTimeKind.Utc);
-
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                ViewBag.Teachers = await _context.Teachers
-                    .Where(t => t.IsActive)
-                    .Select(t => new { t.TeacherId, t.FullName })
-                    .ToListAsync();
-                return View(activity);
+                return NotFound();
             }
 
-            try
+            var activity = await _context.Activities
+                .Include(a => a.Teacher)
+                .Include(a => a.Creator)
+                .Include(a => a.Interactions)
+                    .ThenInclude(i => i.User) // Include user for comments
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (activity == null)
             {
-                // Check for overlapping activities
-                var overlappingActivities = await _context.Activities
-                    .Where(a => a.ActivityId != activity.ActivityId)
-                    .Where(a => a.Status == "Published")
-                    .ToListAsync();
-
-                foreach (var existing in overlappingActivities)
-                {
-                    if (AreActivitiesOverlapping(activity, existing))
-                    {
-                        ModelState.AddModelError("", $"Hoạt động này trùng lịch với hoạt động '{existing.Title}' ({existing.StartDate.ToString("dd/MM/yyyy")} {existing.StartTime.ToString(@"hh\:mm")}).");
-                        ViewBag.Teachers = await _context.Teachers
-                            .Where(t => t.IsActive)
-                            .Select(t => new { t.TeacherId, t.FullName })
-                            .ToListAsync();
-                        return View(activity);
-                    }
-                }
-
-                var userId = GetUserId();
-                activity.CreatedBy = userId;
-                activity.CreatorId = userId;
-                activity.CreatedAt = DateTime.UtcNow; // Đảm bảo UTC
-                activity.UpdatedAt = DateTime.UtcNow; // Đảm bảo UTC
-                activity.Status = "Published";
-                activity.LikesCount = 0;
-                activity.CommentsCount = 0;
-                activity.CurrentParticipants = 0;
-                activity.IsActive = true;
-                activity.IsFull = false;
-
-                _context.Activities.Add(activity);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Đã tạo hoạt đ���ng {Title} bởi {CreatedBy}", activity.Title, activity.CreatedBy);
-                TempData["Success"] = "Hoạt động đã được tạo thành công!";
-                return RedirectToAction("Details", new { id = activity.ActivityId });
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi tạo hoạt động {Title}", activity.Title);
-                ModelState.AddModelError("", "Đã xảy ra lỗi khi tạo hoạt động. Vui lòng thử lại.");
-                ViewBag.Teachers = await _context.Teachers
-                    .Where(t => t.IsActive)
-                    .Select(t => new { t.TeacherId, t.FullName })
-                    .ToListAsync();
-                return View(activity);
-            }
+
+            activity.CurrentRegistrationsCount = await _context.Registrations
+                .CountAsync(r => r.ActivityId == activity.Id && r.Status == "Confirmed");
+            activity.LikesCount = activity.Interactions.Count(i => i.Type == "Like");
+            activity.CommentsCount = activity.Interactions.Count(i => i.Type == "Comment");
+
+            var currentUserId = _userManager.GetUserId(User);
+            activity.IsLikedByUser = !string.IsNullOrEmpty(currentUserId) && activity.Interactions.Any(i => i.Type == "Like" && i.UserId == currentUserId);
+
+            ViewBag.Comments = activity.Interactions.Where(i => i.Type == "Comment").OrderByDescending(i => i.CreatedAt).ToList();
+
+            return View(activity);
         }
 
+        // POST: Activity/ToggleLike
         [HttpPost]
-        [Authorize(Roles = "Student")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(int activityId)
-        {
-            try
-            {
-                var activity = await _context.Activities
-                    .Include(a => a.Registrations)
-                    .FirstOrDefaultAsync(a => a.ActivityId == activityId);
-
-                if (activity == null || !activity.IsActive || activity.IsFull)
-                {
-                    _logger.LogWarning("Hoạt động ID {ActivityId} không hợp lệ hoặc đã đầy.", activityId);
-                    TempData["Error"] = activity == null ? "Hoạt động không tồn tại." :
-                        activity.IsFull ? "Hoạt động đã đầy." : "Hoạt động không còn mở đăng ký.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                {
-                    _logger.LogWarning("Người dùng chưa đăng nhập khi đăng ký hoạt động {ActivityId}", activityId);
-                    TempData["Error"] = "Vui lòng đăng nhập để đăng ký.";
-                    return RedirectToAction("Login", "Account");
-                }
-
-                var studentUser = await _context.Users.FindAsync(userId);
-                var parentId = studentUser?.ParentId;
-
-                // Check for existing registration
-                var existingRegistration = await _context.Registrations
-                    .FirstOrDefaultAsync(r => r.StudentId == userId && r.ActivityId == activityId && r.Status != "Cancelled");
-
-                if (existingRegistration != null)
-                {
-                    TempData["Error"] = "Đã đăng ký hoạt động này rồi.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                // Check for overlapping activities
-                var overlappingRegistrations = await _context.Registrations
-                    .Include(r => r.Activity)
-                    .Where(r => r.StudentId == userId && r.Status == "Approved")
-                    .ToListAsync();
-
-                foreach (var reg in overlappingRegistrations)
-                {
-                    if (reg.Activity != null && AreActivitiesOverlapping(activity, reg.Activity))
-                    {
-                        TempData["Error"] = $"Trùng lịch với hoạt động '{reg.Activity.Title}'.";
-                        return RedirectToAction("Details", new { id = activityId });
-                    }
-                }
-
-                var registration = new Registration
-                {
-                    UserId = userId,
-                    StudentId = userId,
-                    ActivityId = activityId,
-                    ParentId = parentId,
-                    RegistrationDate = DateTime.UtcNow, // Đảm bảo UTC
-                    Status = activity.Type == "free" ? "Approved" : "Pending",
-                    PaymentStatus = activity.Type == "free" ? "N/A" : "Unpaid",
-                    AmountPaid = activity.Type == "free" ? 0 : null,
-                    AttendanceStatus = "Not Started"
-                };
-
-                _context.Registrations.Add(registration);
-
-                // Update participant count for free activities
-                if (activity.Type == "free")
-                {
-                    activity.CurrentParticipants++;
-                    if (activity.CurrentParticipants >= activity.MaxParticipants)
-                    {
-                        activity.IsFull = true;
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Học sinh {StudentId} đã đăng ký hoạt động {ActivityId}", userId, activityId);
-                TempData["Success"] = "Đăng ký thành công! Vui lòng kiểm tra giỏ hàng hoặc đăng ký của tôi.";
-
-                if (activity.Type == "paid")
-                {
-                    // Create cart items for paid activities
-                    var studentCartItem = new CartItem
-                    {
-                        UserId = userId,
-                        ActivityId = activityId,
-                        AddedAt = DateTime.UtcNow, // Đảm bảo UTC
-                        IsPaid = false
-                    };
-                    _context.CartItems.Add(studentCartItem);
-
-                    if (!string.IsNullOrEmpty(parentId))
-                    {
-                        var existingParentCartItem = await _context.CartItems
-                            .FirstOrDefaultAsync(c => c.UserId == parentId && c.ActivityId == activityId && !c.IsPaid);
-
-                        if (existingParentCartItem == null)
-                        {
-                            var parentCartItem = new CartItem
-                            {
-                                UserId = parentId,
-                                ActivityId = activityId,
-                                AddedAt = DateTime.UtcNow, // Đảm bảo UTC
-                                IsPaid = false
-                            };
-                            _context.CartItems.Add(parentCartItem);
-                        }
-                    }
-
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction("Index", "Cart");
-                }
-                else
-                {
-                    return RedirectToAction("MyRegistrations", "Registration");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi đăng ký hoạt động {ActivityId}", activityId);
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return RedirectToAction("Details", new { id = activityId });
-            }
-        }
-
-        // New method for free activity registration
-        [HttpPost]
         [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RegisterFree(int activityId)
+        public async Task<IActionResult> ToggleLike(int activityId)
         {
-            try
+            var userId = _userManager.GetUserId(User);
+            if (userId == null)
             {
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                {
-                    TempData["Error"] = "Vui lòng đăng nhập để đăng ký.";
-                    return RedirectToAction("Login", "Account");
-                }
+                return Json(new { success = false, message = "Bạn cần đăng nhập để thực hiện chức năng này." });
+            }
 
-                var user = await _userManager.FindByIdAsync(userId);
-                var activity = await _context.Activities.FindAsync(activityId);
+            var existingLike = await _context.Interactions
+                .FirstOrDefaultAsync(i => i.ActivityId == activityId && i.UserId == userId && i.Type == "Like");
 
-                if (activity == null)
-                {
-                    TempData["Error"] = "Hoạt động không tồn tại.";
-                    return RedirectToAction("List");
-                }
-
-                if (activity.Type != "free")
-                {
-                    TempData["Error"] = "Hoạt động này không miễn phí.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                if (!activity.IsActive)
-                {
-                    TempData["Error"] = "Hoạt động đã đóng đăng ký.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                if (activity.IsFull)
-                {
-                    TempData["Error"] = "Hoạt động đã đầy.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                // Check if already registered
-                var existingRegistration = await _context.Registrations
-                    .FirstOrDefaultAsync(r => r.ActivityId == activityId && r.StudentId == userId);
-
-                if (existingRegistration != null)
-                {
-                    TempData["Error"] = "Bạn đã đăng ký hoạt động này rồi.";
-                    return RedirectToAction("Details", new { id = activityId });
-                }
-
-                // Check age requirement
-                if (user?.DateOfBirth.HasValue == true)
-                {
-                    var age = DateTime.UtcNow.Year - user.DateOfBirth.Value.Year;
-                    if (user.DateOfBirth.Value.Date > DateTime.UtcNow.AddYears(-age)) age--;
-
-                    if (age < activity.MinAge || age > activity.MaxAge)
-                    {
-                        TempData["Error"] = $"Độ tuổi của bạn không phù hợp với yêu cầu ({activity.MinAge}-{activity.MaxAge} tuổi).";
-                        return RedirectToAction("Details", new { id = activityId });
-                    }
-                }
-
-                // Create registration
-                var registration = new Registration
+            if (existingLike == null)
+            {
+                // Add like
+                var like = new Interaction
                 {
                     ActivityId = activityId,
-                    StudentId = userId,
                     UserId = userId,
-                    ParentId = !string.IsNullOrEmpty(user?.ParentId) ? user.ParentId : null,
-                    RegistrationDate = DateTime.UtcNow, // Đảm bảo UTC
-                    Status = "Approved", // Auto-approve free activities
-                    PaymentStatus = "N/A", // Free activity
-                    Notes = "Đăng ký hoạt động miễn phí",
-                    AmountPaid = 0,
-                    AttendanceStatus = "Not Started"
+                    Type = "Like",
+                    CreatedAt = DateTime.UtcNow
                 };
-
-                _context.Registrations.Add(registration);
-
-                // Update participant count
-                activity.CurrentParticipants++;
-                if (activity.CurrentParticipants >= activity.MaxParticipants)
-                {
-                    activity.IsFull = true;
-                }
-
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Đăng ký hoạt động thành công!";
-                return RedirectToAction("Details", new { id = activityId });
+                _context.Interactions.Add(like);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Lỗi khi đăng ký hoạt động miễn phí {ActivityId}", activityId);
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return RedirectToAction("Details", new { id = activityId });
+                // Remove like
+                _context.Interactions.Remove(existingLike);
             }
+
+            await _context.SaveChangesAsync();
+
+            var likesCount = await _context.Interactions.CountAsync(i => i.ActivityId == activityId && i.Type == "Like");
+            var isLiked = existingLike == null; // If it was null, now it's liked
+
+            return Json(new { success = true, likesCount = likesCount, isLiked = isLiked });
         }
 
+        // POST: Activity/AddComment
         [HttpPost]
-        [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Like(int activityId)
-        {
-            try
-            {
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Json(new { success = false, message = "Vui lòng đăng nhập để thích hoạt động." });
-                }
-
-                var activity = await _context.Activities.FindAsync(activityId);
-                if (activity == null)
-                {
-                    return Json(new { success = false, message = "Hoạt động không tồn tại." });
-                }
-
-                var existingLike = await _context.Interactions
-                    .FirstOrDefaultAsync(i => i.UserId == userId && i.ActivityId == activityId && i.InteractionType == "Like");
-
-                bool hasLiked;
-                if (existingLike != null)
-                {
-                    _context.Interactions.Remove(existingLike);
-                    activity.LikesCount = Math.Max(0, activity.LikesCount - 1);
-                    hasLiked = false;
-                    _logger.LogInformation("Người dùng {UserId} đã bỏ thích hoạt động {ActivityId}", userId, activityId);
-                }
-                else
-                {
-                    var like = new Interaction 
-                    { 
-                        UserId = userId, 
-                        ActivityId = activityId, 
-                        InteractionType = "Like", 
-                        CreatedAt = DateTime.UtcNow // Đảm bảo UTC
-                    };
-                    _context.Interactions.Add(like);
-                    activity.LikesCount++;
-                    hasLiked = true;
-                    _logger.LogInformation("Người dùng {UserId} đã thích hoạt động {ActivityId}", userId, activityId);
-                }
-
-                await _context.SaveChangesAsync();
-
-                return Json(new { 
-                    success = true, 
-                    likesCount = activity.LikesCount,
-                    hasLiked = hasLiked
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi thích hoạt động {ActivityId}", activityId);
-                return Json(new { success = false, message = "Đã xảy ra lỗi. Vui lòng thử lại." });
-            }
-        }
-
-        [HttpPost]
         [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Comment(int activityId, string content)
+        public async Task<IActionResult> AddComment(int activityId, string commentContent)
         {
-            if (string.IsNullOrWhiteSpace(content))
+            var userId = _userManager.GetUserId(User);
+            if (userId == null)
+            {
+                return Json(new { success = false, message = "Bạn cần đăng nhập để bình luận." });
+            }
+
+            if (string.IsNullOrWhiteSpace(commentContent))
             {
                 return Json(new { success = false, message = "Nội dung bình luận không được để trống." });
             }
 
-            try
+            var comment = new Interaction
             {
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
+                ActivityId = activityId,
+                UserId = userId,
+                Type = "Comment",
+                Content = commentContent,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Interactions.Add(comment);
+            await _context.SaveChangesAsync();
+
+            var commentsCount = await _context.Interactions.CountAsync(i => i.ActivityId == activityId && i.Type == "Comment");
+            var user = await _userManager.FindByIdAsync(userId);
+
+            return Json(new
+            {
+                success = true,
+                commentsCount = commentsCount,
+                comment = new
                 {
-                    return Json(new { success = false, message = "Vui lòng đăng nhập để bình luận." });
+                    userName = user.FullName ?? user.UserName,
+                    content = comment.Content,
+                    createdAt = comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                 }
+            });
+        }
 
-                var user = await _userManager.FindByIdAsync(userId);
-                var activity = await _context.Activities.FindAsync(activityId);
+        [HttpGet]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> Create()
+        {
+            ViewBag.Teachers = await _context.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            return View();
+        }
 
-                if (activity == null)
-                {
-                    return Json(new { success = false, message = "Hoạt động không tồn tại." });
-                }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> Create([Bind("Title,Description,StartTime,EndTime,Price,Capacity,Location,ImageUrl,Category,MinAge,MaxAge,Skills,Requirements,TeacherId")] Activity activity)
+        {
+            if (ModelState.IsValid)
+            {
+                var userId = _userManager.GetUserId(User);
+                activity.CreatorId = userId;
+                activity.CreatedAt = DateTime.UtcNow;
 
-                var comment = new Interaction
-                {
-                    UserId = userId,
-                    ActivityId = activityId,
-                    InteractionType = "Comment",
-                    Content = content.Trim(),
-                    CreatedAt = DateTime.UtcNow // Đảm bảo UTC
-                };
-
-                _context.Interactions.Add(comment);
-                activity.CommentsCount++;
+                _context.Add(activity);
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Người dùng {UserId} đã bình luận trên hoạt động {ActivityId}", userId, activityId);
-
-                return Json(new
-                {
-                    success = true,
-                    commentsCount = activity.CommentsCount,
-                    comment = new
-                    {
-                        content = comment.Content,
-                        userName = user?.FullName ?? user?.UserName ?? "Người dùng",
-                        createdAt = comment.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                    }
-                });
+                TempData["SuccessMessage"] = "Hoạt động đã được tạo thành công!";
+                return RedirectToAction(nameof(List));
             }
-            catch (Exception ex)
+            ViewBag.Teachers = await _context.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            return View(activity);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> Edit(int? id)
+        {
+            if (id == null)
             {
-                _logger.LogError(ex, "Lỗi khi bình luận trên hoạt động {ActivityId}", activityId);
-                return Json(new { success = false, message = "Đã xảy ra lỗi. Vui lòng thử lại." });
+                return NotFound();
             }
+
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            // Only allow Admin or the creator of the activity to edit
+            var currentUserId = _userManager.GetUserId(User);
+            if (!User.IsInRole("Admin") && activity.CreatorId != currentUserId)
+            {
+                return Forbid(); // Or Redirect to Access Denied
+            }
+
+            ViewBag.Teachers = await _context.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            return View(activity);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,StartTime,EndTime,Price,Capacity,Location,ImageUrl,Category,MinAge,MaxAge,Skills,Requirements,TeacherId,CreatorId,CreatedAt")] Activity activity)
+        {
+            if (id != activity.Id)
+            {
+                return NotFound();
+            }
+
+            // Only allow Admin or the creator of the activity to edit
+            var existingActivity = await _context.Activities.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+            if (existingActivity == null)
+            {
+                return NotFound();
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+            if (!User.IsInRole("Admin") && existingActivity.CreatorId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    activity.UpdatedAt = DateTime.UtcNow;
+                    // Preserve CreatorId and CreatedAt from existing activity
+                    activity.CreatorId = existingActivity.CreatorId;
+                    activity.CreatedAt = existingActivity.CreatedAt;
+
+                    _context.Update(activity);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Hoạt động đã được cập nhật thành công!";
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!ActivityExists(activity.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(List));
+            }
+            ViewBag.Teachers = await _context.Teachers.OrderBy(t => t.FullName).ToListAsync();
+            return View(activity);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var activity = await _context.Activities
+                .Include(a => a.Teacher)
+                .Include(a => a.Creator)
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            // Only allow Admin or the creator of the activity to delete
+            var currentUserId = _userManager.GetUserId(User);
+            if (!User.IsInRole("Admin") && activity.CreatorId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            return View(activity);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Teacher")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            // Only allow Admin or the creator of the activity to delete
+            var currentUserId = _userManager.GetUserId(User);
+            if (!User.IsInRole("Admin") && activity.CreatorId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            _context.Activities.Remove(activity);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Hoạt động đã được xóa thành công!";
+            return RedirectToAction(nameof(List));
+        }
+
+        private bool ActivityExists(int id)
+        {
+            return _context.Activities.Any(e => e.Id == id);
         }
     }
 }

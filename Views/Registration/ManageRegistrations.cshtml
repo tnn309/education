@@ -171,20 +171,20 @@
                                             <form asp-action="ApproveRegistration" method="post" class="d-inline">
                                                 <input type="hidden" name="id" value="@registration.RegistrationId" />
                                                 <button type="submit" class="btn btn-sm btn-success" title="Duyệt">
-                                                    <i class="fas fa-check"></i>
+                                                    <i class="fas fa-check"></i> Duyệt
                                                 </button>
                                             </form>
                                             <form asp-action="DeclineRegistration" method="post" class="d-inline">
                                                 <input type="hidden" name="id" value="@registration.RegistrationId" />
                                                 <button type="submit" class="btn btn-sm btn-danger" title="Từ chối"
                                                         onclick="return confirm('Bạn có chắc muốn từ chối đăng ký này?')">
-                                                    <i class="fas fa-times"></i>
+                                                    <i class="fas fa-times"></i> Từ chối
                                                 </button>
                                             </form>
                                         }
                                         <a asp-controller="Activity" asp-action="Details" asp-route-id="@registration.Activity?.ActivityId" 
                                            class="btn btn-sm btn-outline-primary" title="Xem hoạt động">
-                                            <i class="fas fa-eye"></i>
+                                            <i class="fas fa-eye"></i> Xem
                                         </a>
                                     </div>
                                 </td>

@@ -1,179 +1,153 @@
+@model List<ApplicationUser>
 @{
-    ViewData["Title"] = "Dashboard Quản trị";
+    ViewData["Title"] = "Quản lý người dùng";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Quản trị</h1>
-    <div>
-        @if (User.Identity?.IsAuthenticated == true)
+    <h1><i class="fas fa-users"></i> Quản lý người dùng</h1>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Về Dashboard
+    </a>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Danh sách người dùng (@(Model?.Count ?? 0))</h5>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
         {
-            <span class="text-muted">Chào mừng, @User.Identity.Name</span>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tên đăng nhập</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Ngày sinh</th>
+                            <th>Vai trò</th>
+                            <th>Phụ huynh</th>
+                            <th>Ngày tạo</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.OrderBy(u => u.UserName))
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@user.UserName</strong>
+                                </td>
+                                <td>@user.FullName</td>
+                                <td>
+                                    <a href="mailto:@user.Email">@user.Email</a>
+                                </td>
+                                <td>
+                                    @if (user.DateOfBirth.HasValue)
+                                    {
+                                        <span>@user.DateOfBirth.Value.ToString("dd/MM/yyyy")</span>
+                                        <br><small class="text-muted">(@user.Age tuổi)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chưa cập nhật</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var roles = new List<string>();
+                                        // Note: In real implementation, you'd need to get user roles from UserManager
+                                        // This is simplified for the view
+                                    }
+                                    <span class="badge bg-primary">Người dùng</span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(user.ParentId))
+                                    {
+                                        <span class="text-success">
+                                            <i class="fas fa-link"></i> Có phụ huynh
+                                        </span>
+                                    }
+                                    else if (user.Children != null && user.Children.Any())
+                                    {
+                                        <span class="text-info">
+                                            <i class="fas fa-users"></i> @user.Children.Count con
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Độc lập</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@user.CreatedAt.ToString("dd/MM/yyyy")</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (user.UserName != "admin")
+                                        {
+                                            <button class="btn btn-sm btn-outline-danger" title="Vô hiệu hóa"
+                                                    onclick="return confirm('Bạn có chắc muốn vô hiệu hóa người dùng này?')">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Chưa có người dùng nào</h5>
+                <p class="text-muted">Các người dùng sẽ hiển thị ở đây khi có người dùng đăng ký.</p>
+            </div>
         }
     </div>
 </div>
 
-<!-- Statistics Cards -->
-<div class="row mb-4">
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-primary text-white">
+<!-- User Statistics -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card text-center">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h2>@ViewBag.TotalActivities</h2>
-                        <p class="mb-0">Tổng hoạt động</p>
-                    </div>
-                    <i class="fas fa-calendar-alt fa-3x opacity-75"></i>
-                </div>
-            </div>
-            <div class="card-footer">
-                <a asp-controller="Activity" asp-action="List" class="text-white text-decoration-none">
-                    <small>Xem chi tiết <i class="fas fa-arrow-right"></i></small>
-                </a>
+                <h4 class="text-primary">@((Model?.Count(u => !string.IsNullOrEmpty(u.ParentId)) ?? 0))</h4>
+                <p class="mb-0">Học sinh</p>
             </div>
         </div>
     </div>
-
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-success text-white">
+    <div class="col-md-3">
+        <div class="card text-center">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h2>@ViewBag.PublishedActivities</h2>
-                        <p class="mb-0">Hoạt động đã xuất bản</p>
-                    </div>
-                    <i class="fas fa-check-circle fa-3x opacity-75"></i>
-                </div>
-            </div>
-            <div class="card-footer">
-                <a asp-controller="Activity" asp-action="Create" class="text-white text-decoration-none">
-                    <small>Tạo mới <i class="fas fa-plus"></i></small>
-                </a>
+                <h4 class="text-success">@((Model?.Count(u => u.Children != null && u.Children.Any()) ?? 0))</h4>
+                <p class="mb-0">Phụ huynh</p>
             </div>
         </div>
     </div>
-
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-info text-white">
+    <div class="col-md-3">
+        <div class="card text-center">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h2>@ViewBag.TotalUsers</h2>
-                        <p class="mb-0">Tổng người dùng</p>
-                    </div>
-                    <i class="fas fa-users fa-3x opacity-75"></i>
-                </div>
-            </div>
-            <div class="card-footer">
-                <a asp-action="Users" class="text-white text-decoration-none">
-                    <small>Quản lý <i class="fas fa-arrow-right"></i></small>
-                </a>
+                <h4 class="text-info">@((Model?.Count(u => u.CreatedAt >= DateTime.UtcNow.AddDays(-30)) ?? 0))</h4>
+                <p class="mb-0">Mới (30 ngày)</p>
             </div>
         </div>
     </div>
-
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card bg-warning text-white">
+    <div class="col-md-3">
+        <div class="card text-center">
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h2>@ViewBag.PendingRegistrations</h2>
-                        <p class="mb-0">Đăng ký chờ duyệt</p>
-                    </div>
-                    <i class="fas fa-clock fa-3x opacity-75"></i>
-                </div>
-            </div>
-            <div class="card-footer">
-                <a asp-action="ManageRegistrations" class="text-white text-decoration-none">
-                    <small>Xử lý <i class="fas fa-arrow-right"></i></small>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Additional Statistics -->
-<div class="row mb-4">
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="fas fa-chalkboard-teacher fa-3x text-primary mb-3"></i>
-                <h3>@ViewBag.TotalTeachers</h3>
-                <p class="text-muted">Giáo viên</p>
-                <a asp-action="Teachers" class="btn btn-outline-primary btn-sm">Quản lý</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="fas fa-list-alt fa-3x text-success mb-3"></i>
-                <h3>@ViewBag.TotalRegistrations</h3>
-                <p class="text-muted">Tổng đăng ký</p>
-                <a asp-action="ManageRegistrations" class="btn btn-outline-success btn-sm">Xem tất cả</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6 mb-4">
-        <div class="card">
-            <div class="card-body text-center">
-                <i class="fas fa-dollar-sign fa-3x text-warning mb-3"></i>
-                <h3>@((ViewBag.TotalRevenue ?? 0M).ToString("N0")) VND</h3>
-                <p class="text-muted">Tổng doanh thu</p>
-                <a href="#" class="btn btn-outline-warning btn-sm">Chi tiết</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Hành động nhanh</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <a asp-controller="Activity" asp-action="Create" class="btn btn-primary w-100">
-                            <i class="fas fa-plus"></i> Tạo hoạt động mới
-                        </a>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <a asp-action="Users" class="btn btn-info w-100">
-                            <i class="fas fa-users"></i> Quản lý người dùng
-                        </a>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <a asp-action="Teachers" class="btn btn-success w-100">
-                            <i class="fas fa-chalkboard-teacher"></i> Quản lý giáo viên
-                        </a>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <a asp-action="ManageRegistrations" class="btn btn-warning w-100">
-                            <i class="fas fa-tasks"></i> Xử lý đăng ký
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Thông tin hệ thống</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Phiên bản:</strong> 1.0.0</p>
-                <p><strong>Cơ sở dữ liệu:</strong> PostgreSQL</p>
-                <p><strong>Máy chủ:</strong> ASP.NET Core</p>
-                <p><strong>Liên hệ hỗ trợ:</strong></p>
-                <a href="mailto:tanndh.dev@gmail.com" class="btn btn-outline-primary btn-sm">
-                    <i class="fas fa-envelope"></i> tanndh.dev@gmail.com
-                </a>
+                <h4 class="text-warning">@((Model?.Count ?? 0))</h4>
+                <p class="mb-0">Tổng cộng</p>
             </div>
         </div>
     </div>

@@ -3,7 +3,7 @@
     ViewData["Title"] = Model.Title;
     var isRegistered = ViewBag.IsRegistered as bool? ?? false;
     var hasLiked = ViewBag.HasLiked as bool? ?? false;
-    var canRegister = ViewBag.CanRegister as bool? ?? false;
+    var canRegisterFree = ViewBag.CanRegisterFree as bool? ?? false; // New ViewBag for free registration
 }
 
 <div class="row">
@@ -121,18 +121,7 @@
                             <span id="likeCount">@Model.LikesCount</span> Thích
                         </button>
 
-                        <!-- Register Button for Free Activities -->
-                        @if (Model.Type == "free" && canRegister && !isRegistered && Model.IsActive && !Model.IsFull)
-                        {
-                            <form asp-action="RegisterFree" method="post" class="d-inline">
-                                <input type="hidden" name="activityId" value="@Model.ActivityId" />
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-user-plus"></i> Đăng ký miễn phí
-                                </button>
-                            </form>
-                        }
-                        else if (isRegistered)
+                        @if (isRegistered)
                         {
                             <span class="btn btn-success disabled">
                                 <i class="fas fa-check"></i> Đã đăng ký
@@ -150,17 +139,30 @@
                                 <i class="fas fa-lock"></i> Đã đóng
                             </span>
                         }
-
-                        <!-- Add to Cart for Paid Activities -->
-                        @if (Model.Type == "paid" && !isRegistered && Model.IsActive && !Model.IsFull)
+                        else
                         {
-                            <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
-                                <input type="hidden" name="activityId" value="@Model.ActivityId" />
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
-                                </button>
-                            </form>
+                            @if (Model.Type == "free")
+                            {
+                                <!-- Register Button for Free Activities -->
+                                <form asp-action="RegisterFree" method="post" class="d-inline">
+                                    <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-user-plus"></i> Đăng ký miễn phí
+                                    </button>
+                                </form>
+                            }
+                            else // Paid activity
+                            {
+                                <!-- Add to Cart for Paid Activities -->
+                                <form asp-controller="Cart" asp-action="AddToCart" method="post" class="d-inline">
+                                    <input type="hidden" name="activityId" value="@Model.ActivityId" />
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-shopping-cart"></i> Thêm vào giỏ hàng
+                                    </button>
+                                </form>
+                            }
                         }
                     }
                     else
@@ -279,12 +281,13 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': token
+                    'RequestVerificationToken': token // Send token in header
                 },
-                body: 'activityId=' + activityId + '&__RequestVerificationToken=' + encodeURIComponent(token)
+                body: 'activityId=' + activityId + '&__RequestVerificationToken=' + encodeURIComponent(token) // Send token in body
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Like response:', data); // Thêm dòng này
                 if (data.success) {
                     document.getElementById('likeCount').textContent = data.likesCount;
                     document.getElementById('sidebarLikeCount').textContent = data.likesCount;
@@ -320,12 +323,13 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': token
+                    'RequestVerificationToken': token // Send token in header
                 },
-                body: 'activityId=' + activityId + '&content=' + encodeURIComponent(content) + '&__RequestVerificationToken=' + encodeURIComponent(token)
+                body: 'activityId=' + activityId + '&content=' + encodeURIComponent(content) + '&__RequestVerificationToken=' + encodeURIComponent(token) // Send token in body
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Comment response:', data); // Thêm dòng này
                 if (data.success) {
                     // Add new comment to the list
                     const commentsSection = document.getElementById('commentsSection');
