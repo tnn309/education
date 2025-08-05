@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using EducationSystem.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using EducationSystem.Models;
 
 namespace EducationSystem.Data
 {
@@ -11,223 +11,237 @@ namespace EducationSystem.Data
         {
         }
 
-        public DbSet<Teacher> Teachers { get; set; }
-        public DbSet<Activity> Activities { get; set; }
-        public DbSet<Registration> Registrations { get; set; }
-        public DbSet<Payment> Payments { get; set; }
-        public DbSet<Message> Messages { get; set; }
-        public DbSet<Interaction> Interactions { get; set; }
-        public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<Activity> Activities { get; set; } = null!;
+        public DbSet<Teacher> Teachers { get; set; } = null!;
+        public DbSet<Registration> Registrations { get; set; } = null!;
+        public DbSet<Interaction> Interactions { get; set; } = null!;
+        public DbSet<CartItem> CartItems { get; set; } = null!;
+        public DbSet<Payment> Payments { get; set; } = null!;
+        public DbSet<Message> Messages { get; set; } = null!;
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder);
 
-            // Configure ApplicationUser
-            modelBuilder.Entity<ApplicationUser>(entity =>
+            // Configure ApplicationUser entity (custom properties and relationships)
+            builder.Entity<ApplicationUser>(entity =>
             {
-                entity.ToTable("AspNetUsers"); // Explicitly map to AspNetUsers table
-                entity.Property(u => u.FullName).HasMaxLength(100);
-                entity.Property(u => u.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                entity.Property(u => u.UpdatedAt)
-                    .HasColumnType("timestamp with time zone");
-                
-                // Self-referencing relationship for Parent-Child
-                entity.HasOne(u => u.Parent)
-                    .WithMany(u => u.Children)
-                    .HasForeignKey(u => u.ParentId)
-                    .OnDelete(DeleteBehavior.SetNull); // ParentId can be null
+                entity.Property(e => e.FullName).HasMaxLength(255);
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).IsRequired();
+
+                // Self-referencing relationship for Parent-Children
+                entity.HasMany(u => u.Children)
+                      .WithOne()
+                      .HasForeignKey(s => s.ParentId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevent deleting parent if children exist
+
+                // Relationships with other entities
+                entity.HasMany(u => u.CreatedActivities)
+                      .WithOne(a => a.Creator)
+                      .HasForeignKey(a => a.CreatorId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.StudentRegistrations)
+                      .WithOne(r => r.Student)
+                      .HasForeignKey(r => r.StudentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.ParentRegistrations)
+                      .WithOne(r => r.Parent)
+                      .HasForeignKey(r => r.ParentId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.Interactions)
+                      .WithOne(i => i.User)
+                      .HasForeignKey(i => i.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.CartItems)
+                      .WithOne(ci => ci.User)
+                      .HasForeignKey(ci => ci.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(u => u.Payments)
+                      .WithOne(p => p.User)
+                      .HasForeignKey(p => p.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.SentMessages)
+                      .WithOne(m => m.Sender)
+                      .HasForeignKey(m => m.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(u => u.ReceivedMessages)
+                      .WithOne(m => m.Receiver)
+                      .HasForeignKey(m => m.ReceiverId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Configure Teacher
-            modelBuilder.Entity<Teacher>(entity =>
+            // Configure Activity entity
+            builder.Entity<Activity>(entity =>
             {
-                entity.ToTable("Teachers");
-                entity.HasKey(t => t.TeacherId);
-                entity.Property(t => t.FullName).IsRequired().HasMaxLength(100);
-                entity.Property(t => t.Email).HasMaxLength(256);
-                entity.Property(t => t.PhoneNumber).HasMaxLength(20);
-                entity.Property(t => t.Specialization).HasMaxLength(100);
-                entity.Property(t => t.IsActive).HasDefaultValue(true);
-                entity.Property(t => t.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                entity.Property(t => t.UpdatedAt)
-                    .HasColumnType("timestamp with time zone");
+                entity.HasKey(e => e.ActivityId);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Description).IsRequired();
+                entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Location).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.StartDate).IsRequired();
+                entity.Property(e => e.EndDate).IsRequired();
+                entity.Property(e => e.StartTime).IsRequired();
+                entity.Property(e => e.EndTime).IsRequired();
+                entity.Property(e => e.Skills).HasMaxLength(1000);
+                entity.Property(e => e.Requirements).HasMaxLength(1000);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired();
+
+                entity.HasOne(e => e.Teacher)
+                      .WithMany(t => t.Activities)
+                      .HasForeignKey(e => e.TeacherId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull); // If teacher is deleted, set TeacherId to null
+
+                entity.HasOne(e => e.Creator)
+                      .WithMany(u => u.CreatedActivities)
+                      .HasForeignKey(e => e.CreatorId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevent deleting user if they created activities
             });
 
-            // Configure Activity
-            modelBuilder.Entity<Activity>(entity =>
+            // Configure Teacher entity
+            builder.Entity<Teacher>(entity =>
             {
-                entity.ToTable("Activities");
-                entity.HasKey(a => a.ActivityId);
-                entity.Property(a => a.Title).IsRequired().HasMaxLength(255);
-                entity.Property(a => a.Description).IsRequired();
-                entity.Property(a => a.ImageUrl).HasMaxLength(500);
-                entity.Property(a => a.Type).IsRequired().HasMaxLength(50);
-                entity.Property(a => a.Price).HasColumnType("decimal(10,2)");
-                entity.Property(a => a.Location).HasMaxLength(255);
-                entity.Property(a => a.Status).HasMaxLength(50).HasDefaultValue("Published"); // Default status
-                entity.Property(a => a.StartDate).HasColumnType("date");
-                entity.Property(a => a.EndDate).HasColumnType("date");
-                entity.Property(a => a.StartTime).HasColumnType("time");
-                entity.Property(a => a.EndTime).HasColumnType("time");
-                entity.Property(a => a.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                entity.Property(a => a.UpdatedAt)
-                    .HasColumnType("timestamp with time zone");
-                
-                entity.HasOne(a => a.Teacher)
-                    .WithMany(t => t.Activities)
-                    .HasForeignKey(a => a.TeacherId)
-                    .OnDelete(DeleteBehavior.SetNull); // TeacherId can be null
-                
-                entity.HasOne(a => a.Creator)
-                    .WithMany(u => u.CreatedActivities)
-                    .HasForeignKey(a => a.CreatedBy)
-                    .OnDelete(DeleteBehavior.SetNull); // CreatedBy can be null
+                entity.HasKey(e => e.TeacherId);
+                entity.Property(e => e.FullName).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Email).HasMaxLength(255);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+                entity.Property(e => e.Specialization).HasMaxLength(255);
+                entity.Property(e => e.Bio).HasMaxLength(2000);
+                entity.Property(e => e.CreatedAt).IsRequired();
             });
 
-            // Configure Registration
-            modelBuilder.Entity<Registration>(entity =>
+            // Configure Registration entity
+            builder.Entity<Registration>(entity =>
             {
-                entity.ToTable("Registrations");
-                entity.HasKey(r => r.RegistrationId);
-                entity.Property(r => r.Status).HasMaxLength(50).HasDefaultValue("Pending");
-                entity.Property(r => r.PaymentStatus).HasMaxLength(50).HasDefaultValue("Unpaid");
-                entity.Property(r => r.AttendanceStatus).HasMaxLength(50).HasDefaultValue("Registered");
-                entity.Property(r => r.RegistrationDate)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                
-                // Relationship for the user who initiated the registration (UserId)
-                entity.HasOne(r => r.User)
-                    .WithMany(u => u.Registrations) // Assuming ApplicationUser has a Registrations collection
-                    .HasForeignKey(r => r.UserId)
-                    .OnDelete(DeleteBehavior.Cascade); 
-                
-                // Relationship for the actual student being registered (StudentId)
-                entity.HasOne(r => r.Student)
-                    .WithMany(u => u.StudentRegistrations)
-                    .HasForeignKey(r => r.StudentId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                
-                // Relationship for the parent who registered the student (ParentId)
-                entity.HasOne(r => r.Parent)
-                    .WithMany(u => u.ParentRegistrations)
-                    .HasForeignKey(r => r.ParentId)
-                    .OnDelete(DeleteBehavior.SetNull); // ParentId can be null
-                
-                entity.HasOne(r => r.Activity)
-                    .WithMany(a => a.Registrations)
-                    .HasForeignKey(r => r.ActivityId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                
-                // Unique constraint to prevent duplicate registrations for the same student and activity
-                // Đã sửa: Thêm dấu ngoặc kép cho tên cột "Status" để PostgreSQL nhận diện đúng
-                entity.HasIndex(r => new { r.StudentId, r.ActivityId })
-                    .IsUnique()
-                    .HasFilter("\"Status\" != 'Cancelled'") // <-- Đã sửa ở đây
-                    .HasDatabaseName("IX_Registrations_StudentId_ActivityId");
+                entity.HasKey(e => e.RegistrationId);
+                entity.Property(e => e.RegistrationDate).IsRequired();
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PaymentStatus).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Notes).HasMaxLength(1000);
+                entity.Property(e => e.AttendanceStatus).HasMaxLength(50);
+                entity.Property(e => e.AmountPaid).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(e => e.Activity)
+                      .WithMany(a => a.Registrations)
+                      .HasForeignKey(e => e.ActivityId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Student)
+                      .WithMany(u => u.StudentRegistrations)
+                      .HasForeignKey(e => e.StudentId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Parent)
+                      .WithMany(u => u.ParentRegistrations)
+                      .HasForeignKey(e => e.ParentId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.User) // Compatibility property
+                      .WithMany()
+                      .HasForeignKey(e => e.UserId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Configure Payment
-            modelBuilder.Entity<Payment>(entity =>
+            // Configure Interaction entity
+            builder.Entity<Interaction>(entity =>
             {
-                entity.ToTable("Payments");
-                entity.HasKey(p => p.PaymentId);
-                entity.Property(p => p.Amount).HasColumnType("decimal(10,2)");
-                entity.Property(p => p.PaymentMethod).HasMaxLength(50);
-                entity.Property(p => p.TransactionId).HasMaxLength(255);
-                entity.Property(p => p.PaymentStatus).HasMaxLength(50).HasDefaultValue("Pending");
-                entity.Property(p => p.ResponseCode).HasMaxLength(50);
-                entity.Property(p => p.PaymentDate)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                
-                entity.HasOne(p => p.Registration)
-                    .WithMany(r => r.Payments)
-                    .HasForeignKey(p => p.RegistrationId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasKey(e => e.InteractionId);
+                entity.Property(e => e.InteractionType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Content).HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).IsRequired();
+
+                entity.HasOne(e => e.Activity)
+                      .WithMany(a => a.Interactions)
+                      .HasForeignKey(e => e.ActivityId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Interactions)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Configure Message
-            modelBuilder.Entity<Message>(entity =>
+            // Configure CartItem entity
+            builder.Entity<CartItem>(entity =>
             {
-                entity.ToTable("Messages");
-                entity.HasKey(m => m.MessageId);
-                entity.Property(m => m.Subject).HasMaxLength(255);
-                entity.Property(m => m.Content).IsRequired();
-                entity.Property(m => m.MessageType).HasMaxLength(50).HasDefaultValue("General");
-                entity.Property(m => m.IsRead).HasDefaultValue(false);
-                entity.Property(m => m.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                
-                entity.HasOne(m => m.Sender)
-                    .WithMany(u => u.SentMessages)
-                    .HasForeignKey(m => m.SenderId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                
-                entity.HasOne(m => m.Recipient)
-                    .WithMany(u => u.ReceivedMessages)
-                    .HasForeignKey(m => m.RecipientId)
-                    .OnDelete(DeleteBehavior.SetNull); // RecipientId can be null
-                
-                entity.HasOne(m => m.RelatedActivity)
-                    .WithMany(a => a.Messages)
-                    .HasForeignKey(m => m.RelatedActivityId)
-                    .OnDelete(DeleteBehavior.SetNull); // RelatedActivityId can be null
+                entity.HasKey(e => e.CartItemId);
+                entity.Property(e => e.AddedAt).IsRequired();
+
+                entity.HasOne(e => e.Activity)
+                      .WithMany(a => a.CartItems)
+                      .HasForeignKey(e => e.ActivityId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.CartItems)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Configure Interaction
-            modelBuilder.Entity<Interaction>(entity =>
+            // Configure Payment entity
+            builder.Entity<Payment>(entity =>
             {
-                entity.ToTable("Interactions");
-                entity.HasKey(i => i.InteractionId);
-                entity.Property(i => i.InteractionType).IsRequired().HasMaxLength(50);
-                entity.Property(i => i.CreatedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                
-                entity.HasOne(i => i.User)
-                    .WithMany(u => u.Interactions)
-                    .HasForeignKey(i => i.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-                
-                entity.HasOne(i => i.Activity)
-                    .WithMany(a => a.Interactions)
-                    .HasForeignKey(i => i.ActivityId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasKey(e => e.PaymentId);
+                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PaymentStatus).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.TransactionId).HasMaxLength(255);
+                entity.Property(e => e.ResponseCode).HasMaxLength(255);
+                entity.Property(e => e.PaymentDate).IsRequired();
+                entity.Property(e => e.Notes).HasMaxLength(1000);
+
+                entity.HasOne(e => e.Registration)
+                      .WithMany(r => r.Payments)
+                      .HasForeignKey(e => e.RegistrationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.Payments)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // Configure CartItem
-            modelBuilder.Entity<CartItem>(entity =>
+            // Configure Message entity
+            builder.Entity<Message>(entity =>
             {
-                entity.ToTable("CartItems");
-                entity.HasKey(c => c.CartItemId);
-                entity.Property(c => c.IsPaid).HasDefaultValue(false);
-                entity.Property(c => c.AddedAt)
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                    .HasColumnType("timestamp with time zone");
-                
-                entity.HasOne(c => c.User)
-                    .WithMany(u => u.CartItems)
-                    .HasForeignKey(c => c.UserId)
-                    .OnDelete(DeleteBehavior.Restrict); // Restrict deletion if cart items exist
-                
-                entity.HasOne(c => c.Activity)
-                    .WithMany(a => a.CartItems)
-                    .HasForeignKey(c => c.ActivityId)
-                    .OnDelete(DeleteBehavior.Restrict); // Restrict deletion if cart items exist
+                entity.HasKey(e => e.MessageId);
+                entity.Property(e => e.Subject).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.MessageType).HasMaxLength(50);
 
-                // Unique constraint to prevent duplicate cart items for the same user and activity
-                entity.HasIndex(c => new { c.UserId, c.ActivityId })
-                    .IsUnique()
-                    .HasDatabaseName("IX_CartItems_UserId_ActivityId");
+                entity.HasOne(e => e.Sender)
+                      .WithMany(u => u.SentMessages)
+                      .HasForeignKey(e => e.SenderId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Receiver)
+                      .WithMany(u => u.ReceivedMessages)
+                      .HasForeignKey(e => e.ReceiverId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Activity)
+                      .WithMany(a => a.Messages)
+                      .HasForeignKey(e => e.ActivityId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
         }
     }

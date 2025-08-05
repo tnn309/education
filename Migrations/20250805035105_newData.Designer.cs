@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EducationSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250717004413_H")]
-    partial class H
+    [Migration("20250805035105_newData")]
+    partial class newData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,30 +33,42 @@ namespace EducationSystem.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ActivityId"));
 
+                    b.Property<int>("CommentsCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
+
+                    b.Property<string>("CreatorId")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CurrentParticipants")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("date");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFull")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LikesCount")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Location")
                         .IsRequired()
@@ -73,28 +85,26 @@ namespace EducationSystem.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Requirements")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Skills")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("date");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<TimeSpan>("StartTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Published");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int?>("TeacherId")
                         .HasColumnType("integer");
@@ -109,16 +119,16 @@ namespace EducationSystem.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ActivityId");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatorId");
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Activities", (string)null);
+                    b.ToTable("Activities");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.ApplicationUser", b =>
@@ -130,16 +140,15 @@ namespace EducationSystem.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Address")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("timestamp with time zone");
@@ -152,8 +161,8 @@ namespace EducationSystem.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("FullName")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -187,9 +196,6 @@ namespace EducationSystem.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -220,14 +226,10 @@ namespace EducationSystem.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("AddedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsPaid")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -237,11 +239,9 @@ namespace EducationSystem.Migrations
 
                     b.HasIndex("ActivityId");
 
-                    b.HasIndex("UserId", "ActivityId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_CartItems_UserId_ActivityId");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("CartItems", (string)null);
+                    b.ToTable("CartItems");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Interaction", b =>
@@ -256,12 +256,11 @@ namespace EducationSystem.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("Content")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("InteractionType")
                         .IsRequired()
@@ -278,7 +277,7 @@ namespace EducationSystem.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Interactions", (string)null);
+                    b.ToTable("Interactions");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Message", b =>
@@ -289,50 +288,48 @@ namespace EducationSystem.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MessageId"));
 
+                    b.Property<int?>("ActivityId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsRead")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("MessageType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("General");
+                        .HasColumnType("character varying(50)");
 
-                    b.Property<string>("RecipientId")
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int?>("RelatedActivityId")
-                        .HasColumnType("integer");
 
                     b.Property<string>("SenderId")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Subject")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
                     b.HasKey("MessageId");
 
-                    b.HasIndex("RecipientId");
+                    b.HasIndex("ActivityId");
 
-                    b.HasIndex("RelatedActivityId");
+                    b.HasIndex("ReceiverId");
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Payment", b =>
@@ -344,43 +341,47 @@ namespace EducationSystem.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime>("PaymentDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PaymentMethod")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Pending");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("RegistrationId")
                         .HasColumnType("integer");
 
                     b.Property<string>("ResponseCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("TransactionId")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.HasKey("PaymentId");
 
                     b.HasIndex("RegistrationId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Registration", b =>
@@ -394,12 +395,12 @@ namespace EducationSystem.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("AmountPaid")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("AttendanceStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Registered");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
@@ -410,29 +411,22 @@ namespace EducationSystem.Migrations
 
                     b.Property<string>("PaymentStatus")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Unpaid");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("RegistrationDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Pending");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("StudentId")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("RegistrationId");
@@ -441,14 +435,11 @@ namespace EducationSystem.Migrations
 
                     b.HasIndex("ParentId");
 
+                    b.HasIndex("StudentId");
+
                     b.HasIndex("UserId");
 
-                    b.HasIndex("StudentId", "ActivityId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Registrations_StudentId_ActivityId")
-                        .HasFilter("\"Status\" != 'Cancelled'");
-
-                    b.ToTable("Registrations", (string)null);
+                    b.ToTable("Registrations");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Teacher", b =>
@@ -460,44 +451,38 @@ namespace EducationSystem.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TeacherId"));
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<int>("Experience")
                         .HasColumnType("integer");
 
                     b.Property<string>("FullName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
                     b.Property<string>("Specialization")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.HasKey("TeacherId");
 
-                    b.ToTable("Teachers", (string)null);
+                    b.ToTable("Teachers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -636,8 +621,8 @@ namespace EducationSystem.Migrations
                 {
                     b.HasOne("EducationSystem.Models.ApplicationUser", "Creator")
                         .WithMany("CreatedActivities")
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EducationSystem.Models.Teacher", "Teacher")
                         .WithMany("Activities")
@@ -651,12 +636,10 @@ namespace EducationSystem.Migrations
 
             modelBuilder.Entity("EducationSystem.Models.ApplicationUser", b =>
                 {
-                    b.HasOne("EducationSystem.Models.ApplicationUser", "Parent")
+                    b.HasOne("EducationSystem.Models.ApplicationUser", null)
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Parent");
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("EducationSystem.Models.CartItem", b =>
@@ -664,13 +647,13 @@ namespace EducationSystem.Migrations
                     b.HasOne("EducationSystem.Models.Activity", "Activity")
                         .WithMany("CartItems")
                         .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EducationSystem.Models.ApplicationUser", "User")
                         .WithMany("CartItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Activity");
@@ -689,7 +672,7 @@ namespace EducationSystem.Migrations
                     b.HasOne("EducationSystem.Models.ApplicationUser", "User")
                         .WithMany("Interactions")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Activity");
@@ -699,25 +682,26 @@ namespace EducationSystem.Migrations
 
             modelBuilder.Entity("EducationSystem.Models.Message", b =>
                 {
-                    b.HasOne("EducationSystem.Models.ApplicationUser", "Recipient")
-                        .WithMany("ReceivedMessages")
-                        .HasForeignKey("RecipientId")
+                    b.HasOne("EducationSystem.Models.Activity", "Activity")
+                        .WithMany("Messages")
+                        .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("EducationSystem.Models.Activity", "RelatedActivity")
-                        .WithMany("Messages")
-                        .HasForeignKey("RelatedActivityId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                    b.HasOne("EducationSystem.Models.ApplicationUser", "Receiver")
+                        .WithMany("ReceivedMessages")
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("EducationSystem.Models.ApplicationUser", "Sender")
                         .WithMany("SentMessages")
                         .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Recipient");
+                    b.Navigation("Activity");
 
-                    b.Navigation("RelatedActivity");
+                    b.Navigation("Receiver");
 
                     b.Navigation("Sender");
                 });
@@ -730,7 +714,15 @@ namespace EducationSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EducationSystem.Models.ApplicationUser", "User")
+                        .WithMany("Payments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Registration");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EducationSystem.Models.Registration", b =>
@@ -744,19 +736,18 @@ namespace EducationSystem.Migrations
                     b.HasOne("EducationSystem.Models.ApplicationUser", "Parent")
                         .WithMany("ParentRegistrations")
                         .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EducationSystem.Models.ApplicationUser", "Student")
                         .WithMany("StudentRegistrations")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("EducationSystem.Models.ApplicationUser", "User")
-                        .WithMany("Registrations")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Activity");
 
@@ -841,9 +832,9 @@ namespace EducationSystem.Migrations
 
                     b.Navigation("ParentRegistrations");
 
-                    b.Navigation("ReceivedMessages");
+                    b.Navigation("Payments");
 
-                    b.Navigation("Registrations");
+                    b.Navigation("ReceivedMessages");
 
                     b.Navigation("SentMessages");
 

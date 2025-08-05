@@ -1,44 +1,180 @@
 @{
-    ViewData["Title"] = "Bảng điều khiển Admin";
+    ViewData["Title"] = "Dashboard Quản trị";
 }
 
-<h2>Bảng điều khiển Admin</h2>
-
-<div class="dashboard-stats">
-    <div class="activity-card">
-        <h3>Tổng số hoạt động</h3>
-        <p>@ViewBag.TotalActivities</p>
-    </div>
-    <div class="activity-card">
-        <h3>Hoạt động đã xuất bản</h3>
-        <p>@ViewBag.PublishedActivities</p>
-    </div>
-    <div class="activity-card">
-        <h3>Tổng số người dùng</h3>
-        <p>@ViewBag.TotalUsers</p>
-    </div>
-    <div class="activity-card">
-        <h3>Tổng số đăng ký</h3>
-        <p>@ViewBag.TotalRegistrations</p>
-    </div>
-    <div class="activity-card">
-        <h3>Đăng ký chờ duyệt</h3>
-        <p>@ViewBag.PendingRegistrations</p>
-    </div>
-    <div class="activity-card">
-        <h3>Tổng số giáo viên</h3>
-        <p>@ViewBag.TotalTeachers</p>
-    </div>
-    <div class="activity-card">
-        <h3>Tổng doanh thu</h3>
-        <p>@($"{ViewBag.TotalRevenue:N0} VNĐ")</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Quản trị</h1>
+    <div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <span class="text-muted">Chào mừng, @User.Identity.Name</span>
+        }
     </div>
 </div>
 
-<h3 style="margin-top: 2rem;">Các liên kết quản lý nhanh:</h3>
-<ul>
-    <li><a asp-controller="Admin" asp-action="Users">Quản lý người dùng</a></li>
-    <li><a asp-controller="Admin" asp-action="Teachers">Quản lý giáo viên</a></li>
-    <li><a asp-controller="Registration" asp-action="ManageRegistrations">Quản lý đăng ký</a></li>
-    <li><a asp-controller="Activity" asp-action="Create">Tạo hoạt động mới</a></li>
-</ul>
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h2>@ViewBag.TotalActivities</h2>
+                        <p class="mb-0">Tổng hoạt động</p>
+                    </div>
+                    <i class="fas fa-calendar-alt fa-3x opacity-75"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a asp-controller="Activity" asp-action="List" class="text-white text-decoration-none">
+                    <small>Xem chi tiết <i class="fas fa-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h2>@ViewBag.PublishedActivities</h2>
+                        <p class="mb-0">Hoạt động đã xuất bản</p>
+                    </div>
+                    <i class="fas fa-check-circle fa-3x opacity-75"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a asp-controller="Activity" asp-action="Create" class="text-white text-decoration-none">
+                    <small>Tạo mới <i class="fas fa-plus"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h2>@ViewBag.TotalUsers</h2>
+                        <p class="mb-0">Tổng người dùng</p>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-75"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a asp-action="Users" class="text-white text-decoration-none">
+                    <small>Quản lý <i class="fas fa-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h2>@ViewBag.PendingRegistrations</h2>
+                        <p class="mb-0">Đăng ký chờ duyệt</p>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-75"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a asp-action="ManageRegistrations" class="text-white text-decoration-none">
+                    <small>Xử lý <i class="fas fa-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Statistics -->
+<div class="row mb-4">
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-chalkboard-teacher fa-3x text-primary mb-3"></i>
+                <h3>@ViewBag.TotalTeachers</h3>
+                <p class="text-muted">Giáo viên</p>
+                <a asp-action="Teachers" class="btn btn-outline-primary btn-sm">Quản lý</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-list-alt fa-3x text-success mb-3"></i>
+                <h3>@ViewBag.TotalRegistrations</h3>
+                <p class="text-muted">Tổng đăng ký</p>
+                <a asp-action="ManageRegistrations" class="btn btn-outline-success btn-sm">Xem tất cả</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-dollar-sign fa-3x text-warning mb-3"></i>
+                <h3>@((ViewBag.TotalRevenue ?? 0M).ToString("N0")) VND</h3>
+                <p class="text-muted">Tổng doanh thu</p>
+                <a href="#" class="btn btn-outline-warning btn-sm">Chi tiết</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Hành động nhanh</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a asp-controller="Activity" asp-action="Create" class="btn btn-primary w-100">
+                            <i class="fas fa-plus"></i> Tạo hoạt động mới
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="Users" class="btn btn-info w-100">
+                            <i class="fas fa-users"></i> Quản lý người dùng
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="Teachers" class="btn btn-success w-100">
+                            <i class="fas fa-chalkboard-teacher"></i> Quản lý giáo viên
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="ManageRegistrations" class="btn btn-warning w-100">
+                            <i class="fas fa-tasks"></i> Xử lý đăng ký
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Thông tin hệ thống</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Phiên bản:</strong> 1.0.0</p>
+                <p><strong>Cơ sở dữ liệu:</strong> PostgreSQL</p>
+                <p><strong>Máy chủ:</strong> ASP.NET Core</p>
+                <p><strong>Liên hệ hỗ trợ:</strong></p>
+                <a href="mailto:tanndh.dev@gmail.com" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-envelope"></i> tanndh.dev@gmail.com
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

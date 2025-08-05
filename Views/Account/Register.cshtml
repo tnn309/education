@@ -1,85 +1,106 @@
-@model EducationSystem.ViewModels.RegisterViewModel
-
+@model RegisterViewModel
 @{
-    ViewData["Title"] = "Đăng ký tài khoản";
+    ViewData["Title"] = "Đăng ký";
 }
 
-<h2>Đăng ký tài khoản</h2>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <h2 class="text-primary">Đăng ký tài khoản</h2>
+                    <p class="text-muted">Tạo tài khoản mới để tham gia EducationSys</p>
+                </div>
 
-<form asp-controller="Account" asp-action="Register" method="post">
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="All" class="alert alert-error"></div>
+                <form asp-action="Register" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" placeholder="Tên đăng nhập" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" placeholder="Email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                    </div>
 
-    <div class="form-group">
-        <label asp-for="Username">Tên Đăng kí</label>
-        <input asp-for="Username" />
-        <span asp-validation-for="Username" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Email"></label>
-        <input asp-for="Email" type="email" />
-        <span asp-validation-for="Email" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="FullName"></label>
-        <input asp-for="FullName" />
-        <span asp-validation-for="FullName" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="DateOfBirth"></label>
-        <input asp-for="DateOfBirth" type="date" />
-        <span asp-validation-for="DateOfBirth" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Address"></label>
-        <input asp-for="Address" />
-        <span asp-validation-for="Address" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Password"></label>
-        <input asp-for="Password" type="password" />
-        <span asp-validation-for="Password" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="ConfirmPassword"></label>
-        <input asp-for="ConfirmPassword" type="password" />
-        <span asp-validation-for="ConfirmPassword" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Role"></label>
-        <select asp-for="Role" id="Role">
-            <option value="Parent">Phụ huynh</option>
-            <option value="Student">Học sinh</option>
-        </select>
-        <span asp-validation-for="Role" class="field-validation-error"></span>
-    </div>
-    <div class="form-group" id="parentUsernameGroup" style="@(Model.Role == "Student" ? "" : "display:none;")">
-        <label asp-for="ParentUsername"></label>
-        <input asp-for="ParentUsername" placeholder="Chỉ điền nếu là học sinh" />
-        <span asp-validation-for="ParentUsername" class="field-validation-error"></span>
-    </div>
-    <div class="form-group">
-        <button type="submit">Đăng ký</button>
-    </div>
-</form>
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Họ và tên đầy đủ" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var roleSelect = document.getElementById('Role');
-        var parentUsernameGroup = document.getElementById('parentUsernameGroup');
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DateOfBirth" class="form-label"></label>
+                            <input asp-for="DateOfBirth" class="form-control" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Role" class="form-label"></label>
+                            <select asp-for="Role" class="form-select" id="roleSelect">
+                                <option value="Parent">Phụ huynh</option>
+                                <option value="Student">Học sinh</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+                    </div>
 
-        function toggleParentUsernameField() {
-            if (roleSelect.value === 'Student') {
-                parentUsernameGroup.style.display = 'block';
+                    <div class="mb-3" id="parentUsernameDiv" style="display: none;">
+                        <label asp-for="ParentUsername" class="form-label"></label>
+                        <input asp-for="ParentUsername" class="form-control" placeholder="Tên đăng nhập hoặc email của phụ huynh" />
+                        <span asp-validation-for="ParentUsername" class="text-danger"></span>
+                        <div class="form-text">Chỉ cần thiết khi đăng ký tài khoản học sinh</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Address" class="form-label"></label>
+                        <textarea asp-for="Address" class="form-control" rows="2" placeholder="Địa chỉ (tùy chọn)"></textarea>
+                        <span asp-validation-for="Address" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" placeholder="Mật khẩu" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" placeholder="Xác nhận mật khẩu" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-user-plus"></i> Đăng ký
+                    </button>
+                </form>
+
+                <div class="text-center">
+                    <p class="mb-0">Đã có tài khoản? 
+                        <a asp-action="Login" class="text-primary">Đăng nhập ngay</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.getElementById('roleSelect').addEventListener('change', function() {
+            const parentDiv = document.getElementById('parentUsernameDiv');
+            if (this.value === 'Student') {
+                parentDiv.style.display = 'block';
             } else {
-                parentUsernameGroup.style.display = 'none';
+                parentDiv.style.display = 'none';
             }
-        }
-
-        // Initial check
-        toggleParentUsernameField();
-
-        // Add event listener for changes
-        roleSelect.addEventListener('change', toggleParentUsernameField);
-    });
-</script>
+        });
+    </script>
+}

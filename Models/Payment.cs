@@ -1,38 +1,36 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema; // Added for [ForeignKey]
-using System;
 
 namespace EducationSystem.Models
 {
     public class Payment
     {
-        [Key]
         public int PaymentId { get; set; }
-        
+
         [Required]
         public int RegistrationId { get; set; }
-        [ForeignKey("RegistrationId")]
-        public virtual Registration? Registration { get; set; }
-        
+
         [Required]
-        [Column(TypeName = "decimal(10,2)")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Số tiền phải lớn hơn 0.")]
+        public string UserId { get; set; } = string.Empty; // Who made the payment
+
+        [Required]
         public decimal Amount { get; set; }
-        
-        public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
-        
-        [StringLength(50)]
-        public string? PaymentMethod { get; set; }
-        
-        [StringLength(255)]
+
+        [Required]
+        public string PaymentMethod { get; set; } = string.Empty; // "Cash", "Card", "Transfer"
+
+        [Required]
+        public string PaymentStatus { get; set; } = string.Empty; // "Pending", "Completed", "Failed", "Refunded"
+
         public string? TransactionId { get; set; }
-        
-        [StringLength(50)]
-        public string PaymentStatus { get; set; } = "Pending"; // Pending, Completed, Failed, Refunded
-        
-        [StringLength(50)]
+
         public string? ResponseCode { get; set; }
-        
+
+        public DateTime PaymentDate { get; set; }
+
         public string? Notes { get; set; }
+
+        // Navigation properties
+        public virtual Registration Registration { get; set; } = null!;
+        public virtual ApplicationUser User { get; set; } = null!;
     }
 }

@@ -1,40 +1,172 @@
-@model List<EducationSystem.Models.Teacher>
-
+@model List<Teacher>
 @{
     ViewData["Title"] = "Quản lý giáo viên";
 }
 
-<h2>Quản lý giáo viên</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chalkboard-teacher"></i> Quản lý giáo viên</h1>
+    <div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeacherModal">
+            <i class="fas fa-plus"></i> Thêm giáo viên
+        </button>
+        <a asp-action="Dashboard" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Về Dashboard
+        </a>
+    </div>
+</div>
 
+<!-- Teachers Grid -->
 @if (Model != null && Model.Any())
 {
-    <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">ID</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Họ tên</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Email</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Chuyên môn</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Kinh nghiệm</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Trạng thái</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var teacher in Model)
-            {
-                <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.TeacherId</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.FullName</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Email</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Specialization</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@teacher.Experience năm</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@(teacher.IsActive ? "Hoạt động" : "Không hoạt động")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="row">
+        @foreach (var teacher in Model)
+        {
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title">@teacher.FullName</h5>
+                            @if (teacher.IsActive)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Không hoạt động</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(teacher.Specialization))
+                        {
+                            <p class="text-primary mb-2">
+                                <i class="fas fa-graduation-cap"></i> @teacher.Specialization
+                            </p>
+                        }
+
+                        <div class="teacher-info mb-3">
+                            @if (!string.IsNullOrEmpty(teacher.Email))
+                            {
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-envelope text-muted me-2"></i>
+                                    <small><a href="mailto:@teacher.Email">@teacher.Email</a></small>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(teacher.PhoneNumber))
+                            {
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-phone text-muted me-2"></i>
+                                    <small>@teacher.PhoneNumber</small>
+                                </div>
+                            }
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-calendar text-muted me-2"></i>
+                                <small>@teacher.Experience năm kinh nghiệm</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-plus text-muted me-2"></i>
+                                <small>Tham gia: @teacher.CreatedAt.ToString("dd/MM/yyyy")</small>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(teacher.Bio))
+                        {
+                            <p class="card-text text-muted">
+                                @(teacher.Bio.Length > 100 ? teacher.Bio.Substring(0, 100) + "..." : teacher.Bio)
+                            </p>
+                        }
+
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    @teacher.Activities.Count hoạt động
+                                </small>
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary btn-sm" title="Xem chi tiết">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" title="Chỉnh sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" title="Xóa"
+                                        onclick="return confirm('Bạn có chắc muốn xóa giáo viên này?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }
 else
 {
-    <p>Không có giáo viên nào.</p>
+    <div class="text-center py-5">
+        <i class="fas fa-chalkboard-teacher fa-5x text-muted mb-4"></i>
+        <h3 class="text-muted">Chưa có giáo viên nào</h3>
+        <p class="text-muted">Hãy thêm giáo viên đầu tiên cho hệ thống.</p>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeacherModal">
+            <i class="fas fa-plus"></i> Thêm giáo viên
+        </button>
+    </div>
+}
+
+<!-- Add Teacher Modal -->
+<div class="modal fade" id="addTeacherModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm giáo viên mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTeacherForm" asp-action="AddTeacher" asp-controller="Admin" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="FullName">Họ tên *</label>
+                            <input type="text" class="form-control" id="FullName" name="FullName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="Email">Email</label>
+                            <input type="email" class="form-control" id="Email" name="Email">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="PhoneNumber">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="PhoneNumber" name="PhoneNumber">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="Specialization">Chuyên môn</label>
+                            <input type="text" class="form-control" id="Specialization" name="Specialization">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="Experience">Kinh nghiệm (năm)</label>
+                        <input type="number" class="form-control" id="Experience" name="Experience" min="0" max="50" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="Bio">Tiểu sử</label>
+                        <textarea class="form-control" id="Bio" name="Bio" rows="3"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Thêm giáo viên</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Any client-side validation or interaction for the modal can go here
+        // The form submission is now handled by asp-action and asp-controller
+    </script>
 }

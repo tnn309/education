@@ -1,0 +1,124 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\controllers\\activitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:controllers\\activitycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\viewmodels\\activitylistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:viewmodels\\activitylistviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|c:\\users\\admin\\desktop\\sp.tin\\2024_2025\\hk h\u00E8\\cnpm\\d\u1EF1 \u00E1n\\educationsystem\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{95C6C957-E684-9EA6-6432-68A98808D015}|EducationSystem.csproj|solutionrelative:data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ActivityController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\ActivityController.cs",
+              "RelativeDocumentMoniker": "Controllers\\ActivityController.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\ActivityController.cs",
+              "RelativeToolTip": "Controllers\\ActivityController.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T08:41:07.115Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AdminController.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "Controllers\\AdminController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T08:23:27.347Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAAJkAAAAAAAAAAAAYwLkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-28T08:23:21.845Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{e5c86464-96be-4d7c-9a8b-abcb3bbf5f92}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-07-27T06:34:11.317Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ActivityListViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\ViewModels\\ActivityListViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\ActivityListViewModel.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\ViewModels\\ActivityListViewModel.cs",
+              "RelativeToolTip": "ViewModels\\ActivityListViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-26T14:58:23.807Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Data\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "Data\\ApplicationDbContext.cs",
+              "ToolTip": "C:\\Users\\Admin\\Desktop\\SP.TIN\\2024_2025\\HK h\u00E8\\CNPM\\D\u1EF1 \u00E1n\\EducationSystem\\Data\\ApplicationDbContext.cs",
+              "RelativeToolTip": "Data\\ApplicationDbContext.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-07-26T14:57:47.049Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

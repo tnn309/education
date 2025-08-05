@@ -1,18 +1,22 @@
-@model EducationSystem.Models.ErrorViewModel
+@model ErrorViewModel
 @{
     ViewData["Title"] = "Lỗi";
 }
 
-<h1 class="text-danger">Lỗi.</h1>
-<h2 class="text-danger">Đã xảy ra lỗi khi xử lý yêu cầu của bạn.</h2>
-
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
-
-<p>
-    Vui lòng thử lại sau. Nếu vấn đề vẫn tiếp diễn, vui lòng liên hệ quản trị viên.
-</p>
+<div class="text-center">
+    <h1 class="display-1 text-danger">Oops!</h1>
+    <h2 class="display-4">Đã xảy ra lỗi</h2>
+    <p class="lead">Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu của bạn.</p>
+    
+    @if (Model.ShowRequestId)
+    {
+        <p class="text-muted">
+            <strong>Request ID:</strong> <code>@Model.RequestId</code>
+        </p>
+    }
+    
+    <div class="mt-4">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Về trang chủ</a>
+        <button onclick="history.back()" class="btn btn-secondary">Quay lại</button>
+    </div>
+</div>

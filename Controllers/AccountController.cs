@@ -11,21 +11,18 @@ using Microsoft.EntityFrameworkCore; // Added for Include
 
 namespace EducationSystem.Controllers
 {
-    [AllowAnonymous] // không đăng nhập vẫn vào được source dưới
+    [AllowAnonymous]
     public class AccountController : Controller
     {
+        // Tiêm các dịch vụ vào dự án 
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AccountController> _logger;
 
-        public AccountController(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext context,
-            ILogger<AccountController> logger)
+        // khởi tạo hàm rỗng
+        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, ILogger<AccountController> logger)
         {
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
@@ -34,20 +31,20 @@ namespace EducationSystem.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        [HttpGet] // lấy dữ liệu từ server (PostgreSQL)
+        [HttpGet] // lấy dữ liệu link đăng nhập của user
         public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
             return View(new LoginViewModel());
         }
 
-        [HttpPost] // gửi dữ liệu lên client server
-        [ValidateAntiForgeryToken] // kiểm tra request có token hợp lệ không
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null) // dùng action bất đồng bộ, xử lý hàm logic 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl; // lưu URL user (ghi nhớ đăng nhập)
+            ViewData["ReturnUrl"] = returnUrl;
 
-            if (!ModelState.IsValid) // hiển thị lại form nếu đăng nhập lỗi
+            if (!ModelState.IsValid)
             {
                 return View(model);
             }
@@ -171,7 +168,7 @@ namespace EducationSystem.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi xảy ra khi đăng xuất.");
-                TempData["Error"] = "Đã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.";
+                TempData["Error"] = "��ã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.";
                 return RedirectToAction("Index", "Home");
             }
         }

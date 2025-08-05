@@ -1,26 +1,9 @@
-@model EducationSystem.ViewModels.ActivityListViewModel
-
+@model ActivityListViewModel
 @{
     ViewData["Title"] = "Trang chủ";
 }
 
 <h2>Hoạt động nổi bật</h2>
-
-<form asp-controller="Home" asp-action="Index" method="get" class="form-group">
-    <label for="search">Tìm kiếm hoạt động:</label>
-    <input type="text" id="search" name="search" value="@Model.SearchQuery" placeholder="Nhập từ khóa tìm kiếm..." />
-    
-    <label for="sortBy">Sắp xếp theo:</label>
-    <select asp-for="SortBy">
-        <option value="newest">Mới nhất</option>
-        <option value="oldest">Cũ nhất</option>
-        <option value="price_low">Giá thấp nhất</option>
-        <option value="price_high">Giá cao nhất</option>
-        <option value="start_date">Ngày bắt đầu</option>
-        <option value="popular">Phổ biến nhất</option>
-    </select>
-    <button type="submit">Tìm kiếm & Sắp xếp</button>
-</form>
 
 @if (Model.Activities != null && Model.Activities.Any())
 {
@@ -29,33 +12,70 @@
         {
             <div class="activity-card">
                 <h3><a asp-controller="Activity" asp-action="Details" asp-route-id="@activity.ActivityId">@activity.Title</a></h3>
-                <p><strong>Loại:</strong> @(activity.Type == "free" ? "Miễn phí" : "Trả phí")</p>
-                <p><strong>Giá:</strong> @(activity.Price == 0 ? "Miễn phí" : $"{activity.Price:N0} VNĐ")</p>
-                <p><strong>Giáo viên:</strong> @(activity.Teacher?.FullName ?? "Đang cập nhật")</p>
-                <p><strong>Ngày:</strong> @activity.StartDate.ToString("dd/MM/yyyy") - @activity.EndDate.ToString("dd/MM/yyyy")</p>
-                <p><strong>Thời gian:</strong> @activity.StartTime.ToString(@"hh\:mm") - @activity.EndTime.ToString(@"hh\:mm")</p>
-                <p><strong>Số chỗ còn lại:</strong> @activity.AvailableSlots / @activity.MaxParticipants</p>
-                <p>@activity.Description.Substring(0, Math.Min(activity.Description.Length, 100))... <a asp-controller="Activity" asp-action="Details" asp-route-id="@activity.ActivityId">Xem chi tiết</a></p>
+                
+                @if (activity.Type == "paid")
+                {
+                    <p><strong>Giá:</strong> @activity.Price.ToString("N0") VND</p>
+                }
+                else
+                {
+                    <p><strong>Giá:</strong> Miễn phí</p>
+                }
+                
+                <p><strong>Thời gian:</strong> @activity.StartDate.ToString("dd/MM/yyyy") - @activity.EndDate.ToString("dd/MM/yyyy")</p>
+                <p><strong>Giờ học:</strong> @activity.StartTime.ToString(@"hh\:mm") - @activity.EndTime.ToString(@"hh\:mm")</p>
+                <p><strong>Địa điểm:</strong> @activity.Location</p>
+                <p><strong>Số chỗ:</strong> @activity.CurrentParticipants / @activity.MaxParticipants</p>
+                
+                @if (activity.Teacher != null)
+                {
+                    <p><strong>Giáo viên:</strong> @activity.Teacher.FullName</p>
+                }
+                
+                <p>@(activity.Description.Length > 100 ? activity.Description.Substring(0, 100) + "..." : activity.Description)</p>
+                
+                <div style="margin-top: 1rem;">
+                    <span class="badge @(activity.Type == "free" ? "bg-success" : "bg-warning")">
+                        @(activity.Type == "free" ? "Miễn phí" : "Trả phí")
+                    </span>
+                    @if (activity.IsFull)
+                    {
+                        <span class="badge bg-danger">Đầy</span>
+                    }
+                    else if (!activity.IsActive)
+                    {
+                        <span class="badge bg-secondary">Đóng</span>
+                    }
+                </div>
             </div>
-        }
-    </div>
-
-    <div class="pagination">
-        @if (Model.HasPreviousPage)
-        {
-            <a asp-controller="Home" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy">Trước</a>
-        }
-        @for (int i = 1; i <= Model.TotalPages; i++)
-        {
-            <a asp-controller="Home" asp-action="Index" asp-route-page="@i" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy" class="@(i == Model.CurrentPage ? "active" : "")">@i</a>
-        }
-        @if (Model.HasNextPage)
-        {
-            <a asp-controller="Home" asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)" asp-route-filter="@Model.CurrentFilter" asp-route-search="@Model.SearchQuery" asp-route-sortBy="@Model.SortBy">Tiếp</a>
         }
     </div>
 }
 else
 {
-    <p>Không tìm thấy hoạt động nào.</p>
+    <div class="text-center" style="padding: 3rem 0;">
+        <h3>Không tìm thấy hoạt động nào</h3>
+        <p>Hiện tại chưa có hoạt động nào được tổ chức.</p>
+    </div>
+}
+
+@if (Model.TotalPages > 1)
+{
+    <div class="pagination">
+        @if (Model.HasPreviousPage)
+        {
+            <a href="?page=@(Model.CurrentPage - 1)&filter=@Model.CurrentFilter&search=@Model.SearchQuery&sortBy=@Model.SortBy">« Trước</a>
+        }
+        
+        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+        {
+            <a href="?page=@i&filter=@Model.CurrentFilter&search=@Model.SearchQuery&sortBy=@Model.SortBy" 
+               class="@(i == Model.CurrentPage ? "active" : "")">@i</a>
+        }
+        
+        @if (Model.HasNextPage)
+        {
+            <a href="?page=@(Model.CurrentPage + 1)&filter=@Model.CurrentFilter&search=@Model.SearchQuery&sortBy=@Model.SortBy">Sau »</a>
+        }
+    </div>
 }

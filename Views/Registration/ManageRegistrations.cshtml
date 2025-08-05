@@ -1,64 +1,206 @@
-@model List<EducationSystem.Models.Registration>
-
+@model List<Registration>
 @{
     ViewData["Title"] = "Quản lý đăng ký";
 }
 
-<h2>Quản lý đăng ký</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tasks"></i> Quản lý đăng ký</h1>
+    <div>
+        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Về Dashboard
+        </a>
+    </div>
+</div>
 
-@if (Model != null && Model.Any())
-{
-    <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
-        <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">ID</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Hoạt động</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Người ĐK</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Học sinh</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Phụ huynh</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Ngày ĐK</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Trạng thái</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thanh toán</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Hành động</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var reg in Model)
-            {
-                <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.RegistrationId</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.Activity?.Title</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.User?.FullName (@reg.User?.UserName)</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.Student?.FullName (@reg.Student?.UserName)</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@(reg.Parent?.FullName ?? "N/A")</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.RegistrationDate.ToString("dd/MM/yyyy")</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.Status</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">@reg.PaymentStatus</td>
-                    <td style="border: 1px solid #ddd; padding: 8px;">
-                        @if (reg.Status == "Pending")
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.Count(r => r.Status == "Pending")</h4>
+                        <p class="mb-0">Chờ duyệt</p>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.Count(r => r.Status == "Approved")</h4>
+                        <p class="mb-0">Đã duyệt</p>
+                    </div>
+                    <i class="fas fa-check fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.Count(r => r.Status == "Rejected")</h4>
+                        <p class="mb-0">Từ chối</p>
+                    </div>
+                    <i class="fas fa-times fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.Count(r => r.Status == "Cancelled")</h4>
+                        <p class="mb-0">Đã hủy</p>
+                    </div>
+                    <i class="fas fa-ban fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registrations Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Danh sách đăng ký</h5>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Hoạt động</th>
+                            <th>Học sinh</th>
+                            <th>Phụ huynh</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Trạng thái</th>
+                            <th>Thanh toán</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var registration in Model.OrderByDescending(r => r.RegistrationDate))
                         {
-                            <form asp-controller="Admin" asp-action="ApproveRegistration" method="post" style="display:inline;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@reg.RegistrationId" />
-                                <button type="submit" class="approve">Duyệt</button>
-                            </form>
-                            <form asp-controller="Admin" asp-action="DeclineRegistration" method="post" style="display:inline; margin-left: 5px;">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@reg.RegistrationId" />
-                                <button type="submit" class="decline">Từ chối</button>
-                            </form>
+                            <tr>
+                                <td>
+                                    <div>
+                                        <strong>@registration.Activity?.Title</strong><br>
+                                        <small class="text-muted">
+                                            @registration.Activity?.StartDate.ToString("dd/MM/yyyy") - 
+                                            @registration.Activity?.EndDate.ToString("dd/MM/yyyy")
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>@(registration.Student?.FullName ?? registration.Student?.UserName)</strong><br>
+                                        <small class="text-muted">@registration.Student?.Email</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (registration.Parent != null)
+                                    {
+                                        <div>
+                                            <strong>@registration.Parent.FullName</strong><br>
+                                            <small class="text-muted">@registration.Parent.Email</small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>@registration.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</small>
+                                </td>
+                                <td>
+                                    @switch (registration.Status)
+                                    {
+                                        case "Pending":
+                                            <span class="badge bg-warning">Chờ duyệt</span>
+                                            break;
+                                        case "Approved":
+                                            <span class="badge bg-success">Đã duyệt</span>
+                                            break;
+                                        case "Rejected":
+                                            <span class="badge bg-danger">Từ chối</span>
+                                            break;
+                                        case "Cancelled":
+                                            <span class="badge bg-secondary">Đã hủy</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark">@registration.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @switch (registration.PaymentStatus)
+                                    {
+                                        case "Paid":
+                                            <span class="badge bg-success">Đã thanh toán</span>
+                                            break;
+                                        case "Unpaid":
+                                            <span class="badge bg-warning">Chưa thanh toán</span>
+                                            break;
+                                        case "Refunded":
+                                            <span class="badge bg-info">Đã hoàn tiền</span>
+                                            break;
+                                        case "N/A":
+                                            <span class="badge bg-light text-dark">N/A</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-light text-dark">@registration.PaymentStatus</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        @if (registration.Status == "Pending")
+                                        {
+                                            <form asp-action="ApproveRegistration" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@registration.RegistrationId" />
+                                                <button type="submit" class="btn btn-sm btn-success" title="Duyệt">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            <form asp-action="DeclineRegistration" method="post" class="d-inline">
+                                                <input type="hidden" name="id" value="@registration.RegistrationId" />
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Từ chối"
+                                                        onclick="return confirm('Bạn có chắc muốn từ chối đăng ký này?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <a asp-controller="Activity" asp-action="Details" asp-route-id="@registration.Activity?.ActivityId" 
+                                           class="btn btn-sm btn-outline-primary" title="Xem hoạt động">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
                         }
-                        else
-                        {
-                            <span>Đã xử lý</span>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>Không có đăng ký nào để quản lý.</p>
-}
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4">
+                <i class="fas fa-list-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Chưa có đăng ký nào</h5>
+                <p class="text-muted">Các đăng ký sẽ hiển thị ở đây khi có người dùng đăng ký hoạt động.</p>
+            </div>
+        }
+    </div>
+</div>

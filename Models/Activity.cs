@@ -1,110 +1,115 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 
 namespace EducationSystem.Models
 {
     public class Activity
     {
-        [Key]
         public int ActivityId { get; set; }
 
-        [Required(ErrorMessage = "Tiêu đề hoạt động là bắt buộc.")]
-        [StringLength(255, ErrorMessage = "Tiêu đề không được vượt quá 255 ký tự.")]
+        [Required(ErrorMessage = "Tiêu đề là bắt buộc")]
+        [Display(Name = "Tiêu đề")]
         public string Title { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Mô tả hoạt động là bắt buộc.")]
+        [Required(ErrorMessage = "Mô tả là bắt buộc")]
+        [Display(Name = "Mô tả")]
         public string Description { get; set; } = string.Empty;
 
-        [StringLength(500)]
+        [Required(ErrorMessage = "Loại hoạt động là bắt buộc")]
+        [Display(Name = "Loại")]
+        public string Type { get; set; } = string.Empty; // "free" or "paid"
+
+        [Display(Name = "Giá")]
+        public decimal Price { get; set; }
+
+        [Display(Name = "Hình ảnh")]
         public string? ImageUrl { get; set; }
 
-        [Required(ErrorMessage = "Loại hoạt động là bắt buộc (miễn phí/trả phí).")]
-        [StringLength(50)]
-        public string Type { get; set; } = "free"; // "free" or "paid"
+        [Required(ErrorMessage = "Số lượng tối đa là bắt buộc")]
+        [Display(Name = "Số lượng tối đa")]
+        [Range(1, 1000, ErrorMessage = "Số lượng phải từ 1 đến 1000")]
+        public int MaxParticipants { get; set; }
 
-        [Column(TypeName = "decimal(10,2)")]
-        [Range(0, double.MaxValue, ErrorMessage = "Giá phải là số không âm.")]
-        public decimal Price { get; set; } = 0;
+        [Display(Name = "Số người đã đăng ký")]
+        public int CurrentParticipants { get; set; }
 
-        [Required(ErrorMessage = "Số lượng người tham gia tối đa là bắt buộc.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Số lượng người tham gia tối đa phải lớn hơn 0.")]
-        public int MaxParticipants { get; set; } = 20;
+        [Required(ErrorMessage = "Tuổi tối thiểu là bắt buộc")]
+        [Display(Name = "Tuổi tối thiểu")]
+        [Range(3, 18, ErrorMessage = "Tuổi phải từ 3 đến 18")]
+        public int MinAge { get; set; }
 
-        [Required(ErrorMessage = "Độ tuổi tối thiểu là bắt buộc.")]
-        [Range(0, 100, ErrorMessage = "Độ tuổi tối thiểu phải từ 0 đến 100.")]
-        public int MinAge { get; set; } = 6;
+        [Required(ErrorMessage = "Tuổi tối đa là bắt buộc")]
+        [Display(Name = "Tuổi tối đa")]
+        [Range(3, 18, ErrorMessage = "Tuổi phải từ 3 đến 18")]
+        public int MaxAge { get; set; }
 
-        [Required(ErrorMessage = "Độ tuổi tối đa là bắt buộc.")]
-        [Range(0, 100, ErrorMessage = "Độ tuổi tối đa phải từ 0 đến 100.")]
-        public int MaxAge { get; set; } = 18;
-
-        [StringLength(500)]
-        public string? Skills { get; set; } // Kỹ năng cần thiết hoặc đạt được
-
-        [StringLength(1000)]
-        public string? Requirements { get; set; } // Yêu cầu đặc biệt
-
-        [Required(ErrorMessage = "Địa điểm là bắt buộc.")]
-        [StringLength(255)]
+        [Required(ErrorMessage = "Địa điểm là bắt buộc")]
+        [Display(Name = "Địa điểm")]
         public string Location { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc.")]
+        [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc")]
+        [Display(Name = "Ngày bắt đầu")]
         [DataType(DataType.Date)]
         public DateTime StartDate { get; set; }
 
-        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc.")]
+        [Required(ErrorMessage = "Ngày kết thúc là bắt buộc")]
+        [Display(Name = "Ngày kết thúc")]
         [DataType(DataType.Date)]
         public DateTime EndDate { get; set; }
 
-        [Required(ErrorMessage = "Thời gian bắt đầu là bắt buộc.")]
+        [Required(ErrorMessage = "Giờ bắt đầu là bắt buộc")]
+        [Display(Name = "Giờ bắt đầu")]
         [DataType(DataType.Time)]
         public TimeSpan StartTime { get; set; }
 
-        [Required(ErrorMessage = "Thời gian kết thúc là bắt buộc.")]
+        [Required(ErrorMessage = "Giờ kết thúc là bắt buộc")]
+        [Display(Name = "Giờ kết thúc")]
         [DataType(DataType.Time)]
         public TimeSpan EndTime { get; set; }
 
-        [Required]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [Display(Name = "Kỹ năng")]
+        public string? Skills { get; set; }
 
-        public DateTime? UpdatedAt { get; set; }
+        [Display(Name = "Yêu cầu")]
+        public string? Requirements { get; set; }
 
-        [Required]
-        public bool IsActive { get; set; } = true; // Hoạt động có đang mở đăng ký không
-
-        [Required]
-        [StringLength(50)]
-        public string Status { get; set; } = "Published"; // e.g., Draft, Published, Archived, Full, Cancelled, Completed
-
-        // Foreign key for Teacher
+        [Display(Name = "Giáo viên")]
         public int? TeacherId { get; set; }
-        [ForeignKey("TeacherId")]
-        public Teacher? Teacher { get; set; }
 
-        // Foreign key for Creator (ApplicationUser)
+        [Display(Name = "Trạng thái")]
+        public bool IsActive { get; set; }
+
+        [Display(Name = "Đã đầy")]
+        public bool IsFull { get; set; }
+
+        [Display(Name = "Số lượt thích")]
+        public int LikesCount { get; set; }
+
+        [Display(Name = "Số bình luận")]
+        public int CommentsCount { get; set; }
+
+        // Additional properties for compatibility
+        [Display(Name = "Trạng thái xuất bản")]
+        // Updated to include "Full" as a possible status for capacity management
+        public string Status { get; set; } = "Published"; // "Draft", "Published", "Archived", "Full"
+
+        [Display(Name = "Người tạo")]
         public string? CreatedBy { get; set; }
-        [ForeignKey("CreatedBy")]
-        public ApplicationUser? Creator { get; set; }
+
+        [Display(Name = "Người tạo (ID)")]
+        public string? CreatorId { get; set; }
+
+        [Display(Name = "Ngày tạo")]
+        public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "Ngày cập nhật")]
+        public DateTime UpdatedAt { get; set; }
 
         // Navigation properties
-        public ICollection<Registration>? Registrations { get; set; } = new List<Registration>();
-        public ICollection<CartItem>? CartItems { get; set; } = new List<CartItem>();
-        public ICollection<Interaction>? Interactions { get; set; } = new List<Interaction>(); // Likes, Comments
-        public ICollection<Message>? Messages { get; set; } = new List<Message>(); // Messages related to this activity
-
-        // Helper properties (NotMapped means they are not stored in the database)
-        [NotMapped]
-        public int CurrentParticipants => Registrations?.Count(r => r.Status == "Approved") ?? 0;
-        [NotMapped]
-        public int AvailableSlots => MaxParticipants - CurrentParticipants;
-        [NotMapped]
-        public bool IsFull => AvailableSlots <= 0;
-        [NotMapped]
-        public int LikesCount => Interactions?.Count(i => i.InteractionType == "Like") ?? 0;
-        [NotMapped]
-        public int CommentsCount => Interactions?.Count(i => i.InteractionType == "Comment") ?? 0;
+        public virtual Teacher? Teacher { get; set; }
+        public virtual ApplicationUser? Creator { get; set; }
+        public virtual ICollection<Registration> Registrations { get; set; } = new List<Registration>();
+        public virtual ICollection<Interaction> Interactions { get; set; } = new List<Interaction>();
+        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+        public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
     }
 }

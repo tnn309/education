@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EducationSystem.Migrations
 {
     /// <inheritdoc />
-    public partial class hihi : Migration
+    public partial class newData : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,12 +31,11 @@ namespace EducationSystem.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    FullName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     DateOfBirth = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Address = table.Column<string>(type: "text", nullable: true),
+                    Address = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     ParentId = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -60,7 +59,7 @@ namespace EducationSystem.Migrations
                         column: x => x.ParentId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -69,15 +68,14 @@ namespace EducationSystem.Migrations
                 {
                     TeacherId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    FullName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Email = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    Specialization = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    Specialization = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     Experience = table.Column<int>(type: "integer", nullable: false),
-                    Bio = table.Column<string>(type: "text", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    Bio = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -198,35 +196,40 @@ namespace EducationSystem.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    ImageUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    ImageUrl = table.Column<string>(type: "text", nullable: true),
                     MaxParticipants = table.Column<int>(type: "integer", nullable: false),
+                    CurrentParticipants = table.Column<int>(type: "integer", nullable: false),
                     MinAge = table.Column<int>(type: "integer", nullable: false),
                     MaxAge = table.Column<int>(type: "integer", nullable: false),
-                    Skills = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    Requirements = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     Location = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    StartDate = table.Column<DateTime>(type: "date", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "date", nullable: false),
-                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Published"),
+                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    StartTime = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    EndTime = table.Column<TimeSpan>(type: "interval", nullable: false),
+                    Skills = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Requirements = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     TeacherId = table.Column<int>(type: "integer", nullable: true),
-                    CreatedBy = table.Column<string>(type: "text", nullable: true)
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    IsFull = table.Column<bool>(type: "boolean", nullable: false),
+                    LikesCount = table.Column<int>(type: "integer", nullable: false),
+                    CommentsCount = table.Column<int>(type: "integer", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    CreatorId = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Activities", x => x.ActivityId);
                     table.ForeignKey(
-                        name: "FK_Activities_AspNetUsers_CreatedBy",
-                        column: x => x.CreatedBy,
+                        name: "FK_Activities_AspNetUsers_CreatorId",
+                        column: x => x.CreatorId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Activities_Teachers_TeacherId",
                         column: x => x.TeacherId,
@@ -243,8 +246,8 @@ namespace EducationSystem.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<string>(type: "text", nullable: false),
                     ActivityId = table.Column<int>(type: "integer", nullable: false),
-                    AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    IsPaid = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false)
+                    AddedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsPaid = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -254,13 +257,13 @@ namespace EducationSystem.Migrations
                         column: x => x.ActivityId,
                         principalTable: "Activities",
                         principalColumn: "ActivityId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_CartItems_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -269,11 +272,11 @@ namespace EducationSystem.Migrations
                 {
                     InteractionId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<string>(type: "text", nullable: false),
                     ActivityId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<string>(type: "text", nullable: false),
                     InteractionType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Content = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                    Content = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -289,7 +292,7 @@ namespace EducationSystem.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -299,35 +302,36 @@ namespace EducationSystem.Migrations
                     MessageId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     SenderId = table.Column<string>(type: "text", nullable: false),
-                    RecipientId = table.Column<string>(type: "text", nullable: true),
-                    Subject = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    ReceiverId = table.Column<string>(type: "text", nullable: false),
+                    ActivityId = table.Column<int>(type: "integer", nullable: true),
+                    Subject = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false),
-                    IsRead = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
-                    MessageType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "General"),
-                    RelatedActivityId = table.Column<int>(type: "integer", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                    IsRead = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    MessageType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Messages", x => x.MessageId);
                     table.ForeignKey(
-                        name: "FK_Messages_Activities_RelatedActivityId",
-                        column: x => x.RelatedActivityId,
+                        name: "FK_Messages_Activities_ActivityId",
+                        column: x => x.ActivityId,
                         principalTable: "Activities",
                         principalColumn: "ActivityId",
                         onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
-                        name: "FK_Messages_AspNetUsers_RecipientId",
-                        column: x => x.RecipientId,
+                        name: "FK_Messages_AspNetUsers_ReceiverId",
+                        column: x => x.ReceiverId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Messages_AspNetUsers_SenderId",
                         column: x => x.SenderId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -336,15 +340,16 @@ namespace EducationSystem.Migrations
                 {
                     RegistrationId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<string>(type: "text", nullable: false),
-                    StudentId = table.Column<string>(type: "text", nullable: false),
                     ActivityId = table.Column<int>(type: "integer", nullable: false),
+                    StudentId = table.Column<string>(type: "text", nullable: false),
                     ParentId = table.Column<string>(type: "text", nullable: true),
-                    RegistrationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Pending"),
+                    UserId = table.Column<string>(type: "text", nullable: true),
+                    RegistrationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    PaymentStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
-                    PaymentStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Unpaid"),
-                    AttendanceStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Registered")
+                    AttendanceStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    AmountPaid = table.Column<decimal>(type: "numeric(18,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -360,19 +365,19 @@ namespace EducationSystem.Migrations
                         column: x => x.ParentId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Registrations_AspNetUsers_StudentId",
                         column: x => x.StudentId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Registrations_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -382,17 +387,24 @@ namespace EducationSystem.Migrations
                     PaymentId = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     RegistrationId = table.Column<int>(type: "integer", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
-                    PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    PaymentMethod = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    UserId = table.Column<string>(type: "text", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    PaymentMethod = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    PaymentStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     TransactionId = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    PaymentStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Pending"),
-                    ResponseCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    Notes = table.Column<string>(type: "text", nullable: true)
+                    ResponseCode = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Notes = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Payments", x => x.PaymentId);
+                    table.ForeignKey(
+                        name: "FK_Payments_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Payments_Registrations_RegistrationId",
                         column: x => x.RegistrationId,
@@ -402,9 +414,9 @@ namespace EducationSystem.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Activities_CreatedBy",
+                name: "IX_Activities_CreatorId",
                 table: "Activities",
-                column: "CreatedBy");
+                column: "CreatorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Activities_TeacherId",
@@ -459,10 +471,9 @@ namespace EducationSystem.Migrations
                 column: "ActivityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CartItems_UserId_ActivityId",
+                name: "IX_CartItems_UserId",
                 table: "CartItems",
-                columns: new[] { "UserId", "ActivityId" },
-                unique: true);
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Interactions_ActivityId",
@@ -475,14 +486,14 @@ namespace EducationSystem.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_RecipientId",
+                name: "IX_Messages_ActivityId",
                 table: "Messages",
-                column: "RecipientId");
+                column: "ActivityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Messages_RelatedActivityId",
+                name: "IX_Messages_ReceiverId",
                 table: "Messages",
-                column: "RelatedActivityId");
+                column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_SenderId",
@@ -495,6 +506,11 @@ namespace EducationSystem.Migrations
                 column: "RegistrationId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_UserId",
+                table: "Payments",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Registrations_ActivityId",
                 table: "Registrations",
                 column: "ActivityId");
@@ -505,11 +521,9 @@ namespace EducationSystem.Migrations
                 column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Registrations_StudentId_ActivityId",
+                name: "IX_Registrations_StudentId",
                 table: "Registrations",
-                columns: new[] { "StudentId", "ActivityId" },
-                unique: true,
-                filter: "\"Status\" != 'Cancelled'");
+                column: "StudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Registrations_UserId",

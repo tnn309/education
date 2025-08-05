@@ -2,277 +2,240 @@ using Microsoft.AspNetCore.Mvc;
 using EducationSystem.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using EducationSystem.Models;
-using Microsoft.Extensions.Logging;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using System.Linq;
+using EducationSystem.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace EducationSystem.Controllers
 {
-    [Authorize] // Giữ lại cho phép người dùng xem giỏ hàng
+    [Authorize]
     public class CartController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CartController> _logger;
 
-        public CartController(ApplicationDbContext context, ILogger<CartController> logger)
+        public CartController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, ILogger<CartController> logger)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _context = context;
+            _userManager = userManager;
+            _logger = logger;
         }
 
         private string? GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        private bool AreActivitiesOverlapping(Activity newActivity, Activity existingActivity)
-        {
-            bool datesOverlap = newActivity.StartDate <= existingActivity.EndDate && newActivity.EndDate >= existingActivity.StartDate;
-            if (!datesOverlap) return false;
-            return newActivity.StartTime < newActivity.EndTime && existingActivity.StartTime < existingActivity.EndTime;
-        }
-
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            try
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                {
-                    TempData["Error"] = "Vui lòng đăng nhập để xem giỏ hàng.";
-                    return RedirectToAction("Login", "Account");
-                }
-
-                var cartItems = await _context.CartItems
-                    .Include(c => c.Activity)
-                        .ThenInclude(a => a!.Teacher) // Include Teacher for Activity
-                    .Where(c => c.UserId == userId && !c.IsPaid)
-                    .OrderByDescending(c => c.AddedAt)
-                    .ToListAsync();
-
-                return View(cartItems);
+                return RedirectToAction("Login", "Account");
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Lỗi khi tải giỏ hàng cho người dùng {UserId}", GetUserId());
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return View("Error");
-            }
+
+            var cartItems = await _context.CartItems
+                .Where(ci => ci.UserId == userId && !ci.IsPaid)
+                .Include(ci => ci.Activity)
+                .Include(ci => ci.User) // Include the user who added the item to cart
+                .OrderByDescending(ci => ci.AddedAt)
+                .ToListAsync();
+
+            return View(cartItems);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddToCart(int activityId)
         {
-            try
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = GetUserId();
-                if (string.IsNullOrEmpty(userId))
-                {
-                    TempData["Error"] = "Vui lòng đăng nhập để thêm vào giỏ hàng.";
-                    return RedirectToAction("Login", "Account");
-                }
-
-                var activity = await _context.Activities.FindAsync(activityId);
-                string? errorMessage = null;
-
-                if (activity == null)
-                {
-                    errorMessage = "Hoạt động không tồn tại.";
-                }
-                else if (activity.Type != "paid")
-                {
-                    errorMessage = "Hoạt động miễn phí không cần thêm vào giỏ hàng.";
-                }
-                else if (activity.IsFull)
-                {
-                    errorMessage = "Hoạt động đã đầy.";
-                }
-                else if (!activity.IsActive)
-                {
-                    errorMessage = "Hoạt động không còn mở đăng ký.";
-                }
-
-                if (errorMessage != null)
-                {
-                    TempData["Error"] = errorMessage;
-                    return RedirectToAction("Details", "Activity", new { id = activityId });
-                }
-
-                var existingCartItem = await _context.CartItems
-                    .FirstOrDefaultAsync(c => c.UserId == userId && c.ActivityId == activityId && !c.IsPaid);
-                if (existingCartItem != null)
-                {
-                    TempData["Error"] = "Hoạt động này đã có trong giỏ hàng của bạn.";
-                    return RedirectToAction("Details", "Activity", new { id = activityId });
-                }
-
-                // Check for overlapping activities in the cart for the current user
-                var userCartActivities = await _context.CartItems
-                    .Include(ci => ci.Activity)
-                    .Where(ci => ci.UserId == userId && !ci.IsPaid)
-                    .Select(ci => ci.Activity)
-                    .ToListAsync();
-
-                foreach (var cartActivity in userCartActivities)
-                {
-                    if (cartActivity != null && AreActivitiesOverlapping(activity!, cartActivity))
-                    {
-                        TempData["Error"] = $"Hoạt động '{activity!.Title}' bị trùng lịch với hoạt động '{cartActivity.Title}' đã có trong giỏ hàng.";
-                        return RedirectToAction("Details", "Activity", new { id = activityId });
-                    }
-                }
-
-                // Check for overlapping activities in existing registrations for the current user (as student or parent)
-                var userRegisteredActivities = await _context.Registrations
-                    .Include(r => r.Activity)
-                    .Where(r => (r.UserId == userId || r.StudentId == userId || r.ParentId == userId) && r.Status != "Cancelled")
-                    .Select(r => r.Activity)
-                    .ToListAsync();
-
-                foreach (var registeredActivity in userRegisteredActivities)
-                {
-                    if (registeredActivity != null && AreActivitiesOverlapping(activity!, registeredActivity))
-                    {
-                        TempData["Error"] = $"Hoạt động '{activity!.Title}' bị trùng lịch với hoạt động '{registeredActivity.Title}' bạn đã đăng ký.";
-                        return RedirectToAction("Details", "Activity", new { id = activityId });
-                    }
-                }
-
-                var cartItem = new CartItem
-                {
-                    UserId = userId,
-                    ActivityId = activityId,
-                    AddedAt = DateTime.UtcNow,
-                    IsPaid = false
-                };
-
-                _context.CartItems.Add(cartItem);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Hoạt động đã được thêm vào giỏ hàng.";
-                return RedirectToAction("Index", "Cart");
+                TempData["Error"] = "Vui lòng đăng nhập để thêm vào giỏ hàng.";
+                return RedirectToAction("Login", "Account");
             }
-            catch (Exception ex)
+
+            var activity = await _context.Activities.FindAsync(activityId);
+            if (activity == null || activity.Type == "free")
             {
-                _logger.LogError(ex, "Lỗi khi thêm vào giỏ hàng hoạt động {ActivityId} cho người dùng {UserId}", activityId, GetUserId());
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return View("Error");
+                TempData["Error"] = "Hoạt động không tồn tại hoặc là hoạt động miễn phí.";
+                return RedirectToAction("Details", "Activity", new { id = activityId });
             }
+
+            if (activity.IsFull || !activity.IsActive)
+            {
+                TempData["Error"] = "Hoạt động đã đầy hoặc không còn mở đăng ký.";
+                return RedirectToAction("Details", "Activity", new { id = activityId });
+            }
+
+            // Check if already in cart
+            var existingCartItem = await _context.CartItems
+                .FirstOrDefaultAsync(ci => ci.UserId == userId && ci.ActivityId == activityId && !ci.IsPaid);
+
+            if (existingCartItem != null)
+            {
+                TempData["Error"] = "Hoạt động này đã có trong giỏ hàng của bạn.";
+                return RedirectToAction("Details", "Activity", new { id = activityId });
+            }
+
+            // Check if already registered (even if not paid yet)
+            var existingRegistration = await _context.Registrations
+                .FirstOrDefaultAsync(r => r.StudentId == userId && r.ActivityId == activityId && r.Status != "Cancelled");
+
+            if (existingRegistration != null)
+            {
+                TempData["Error"] = "Bạn đã đăng ký hoạt động này rồi.";
+                return RedirectToAction("Details", "Activity", new { id = activityId });
+            }
+
+            var cartItem = new CartItem
+            {
+                UserId = userId,
+                ActivityId = activityId,
+                AddedAt = DateTime.UtcNow,
+                IsPaid = false
+            };
+
+            _context.CartItems.Add(cartItem);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Hoạt động đã được thêm vào giỏ hàng.";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveFromCart(int id)
         {
-            try
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = GetUserId();
-                var cartItem = await _context.CartItems.FirstOrDefaultAsync(c => c.CartItemId == id && c.UserId == userId && !c.IsPaid);
-
-                if (cartItem == null)
-                {
-                    TempData["Error"] = "Không tìm thấy mục trong giỏ hàng hoặc đã được thanh toán.";
-                    return RedirectToAction("Index", "Cart");
-                }
-
-                _context.CartItems.Remove(cartItem);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "Mục đã được xóa khỏi giỏ hàng.";
-                return RedirectToAction("Index", "Cart");
+                return RedirectToAction("Login", "Account");
             }
-            catch (Exception ex)
+
+            var cartItem = await _context.CartItems.FirstOrDefaultAsync(ci => ci.CartItemId == id && ci.UserId == userId);
+
+            if (cartItem == null)
             {
-                _logger.LogError(ex, "Lỗi khi xóa mục {CartItemId} khỏi giỏ hàng cho người dùng {UserId}", id, GetUserId());
-                TempData["Error"] = "Đã xảy ra lỗi. Vui lòng thử lại.";
-                return View("Error");
+                TempData["Error"] = "Không tìm thấy mục trong giỏ hàng.";
+                return RedirectToAction("Index");
             }
+
+            _context.CartItems.Remove(cartItem);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Mục đã được xóa khỏi giỏ hàng.";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Parent")] // <-- Chỉ phụ huynh mới có quyền thanh toán
         public async Task<IActionResult> Checkout(int id)
         {
-            try
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
             {
-                var userId = GetUserId();
-                var cartItem = await _context.CartItems
-                    .Include(ci => ci.Activity)
-                    .FirstOrDefaultAsync(c => c.CartItemId == id && c.UserId == userId && !c.IsPaid);
+                TempData["Error"] = "Vui lòng đăng nhập để thanh toán.";
+                return RedirectToAction("Login", "Account");
+            }
 
-                if (cartItem == null || cartItem.Activity == null)
-                {
-                    TempData["Error"] = "Không tìm thấy mục trong giỏ hàng hoặc hoạt động không tồn tại.";
-                    return RedirectToAction("Index", "Cart");
-                }
+            var currentUser = await _userManager.FindByIdAsync(userId);
+            if (currentUser == null || await _userManager.IsInRoleAsync(currentUser, "Student"))
+            {
+                TempData["Error"] = "Chỉ phụ huynh hoặc quản trị viên mới có thể thanh toán.";
+                return RedirectToAction("Index");
+            }
 
-                var activity = cartItem.Activity;
+            var cartItem = await _context.CartItems
+                .Include(ci => ci.Activity)
+                .Include(ci => ci.User) // The user who added to cart (student)
+                .FirstOrDefaultAsync(ci => ci.CartItemId == id && ci.UserId == userId && !ci.IsPaid);
 
-                // Check if activity is still active and has available slots
-                if (!activity.IsActive || activity.IsFull)
-                {
-                    TempData["Error"] = activity.IsFull ? "Hoạt động đã đầy." : "Hoạt động không còn mở đăng ký.";
-                    _context.CartItems.Remove(cartItem); // Remove invalid item from cart
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction("Index", "Cart");
-                }
+            if (cartItem == null || cartItem.Activity == null || cartItem.User == null)
+            {
+                TempData["Error"] = "Mục giỏ hàng không hợp lệ hoặc không tìm thấy.";
+                return RedirectToAction("Index");
+            }
 
-                // Check for overlapping activities in existing registrations for the current user (as student or parent)
-                // When a parent checks out, the 'StudentId' in Registration will be the actual student (could be parent themselves or a child).
-                // The overlap check should be against the *actual student's* existing registrations.
-                var userRegisteredActivities = await _context.Registrations
-                    .Include(r => r.Activity)
-                    .Where(r => (r.StudentId == userId || r.ParentId == userId) // Check current user as student OR as parent of a registered student
-                                 && r.Status != "Cancelled"
-                                 && r.ActivityId != activity.ActivityId) // Exclude the activity being checked out itself
-                    .Select(r => r.Activity)
-                    .ToListAsync();
+            if (cartItem.Activity.Type == "free")
+            {
+                TempData["Error"] = "Hoạt động miễn phí không cần thanh toán.";
+                return RedirectToAction("Index");
+            }
 
-                foreach (var registeredActivity in userRegisteredActivities)
-                {
-                    if (registeredActivity != null && AreActivitiesOverlapping(activity, registeredActivity))
-                    {
-                        TempData["Error"] = $"Hoạt động '{activity.Title}' bị trùng lịch với hoạt động '{registeredActivity.Title}' bạn đã đăng ký.";
-                        return RedirectToAction("Index", "Cart");
-                    }
-                }
+            // Check if a registration already exists for this activity and student
+            var existingRegistration = await _context.Registrations
+                .FirstOrDefaultAsync(r => r.ActivityId == cartItem.ActivityId && r.StudentId == cartItem.User.Id && r.Status != "Cancelled");
 
-                // Create a new registration
-                var registration = new Registration
-                {
-                    UserId = userId, // The parent who initiated the checkout
-                    StudentId = userId, // The parent is registering themselves for this activity.
-                                        // If a parent checks out for a child, the cart item should reflect the child,
-                                        // or a separate flow for parent-checkout-for-child is needed.
-                                        // For simplicity, assuming parent checks out for themselves.
-                                        // If you need parent to checkout for a child, the CartItem model needs to store StudentId.
-                    ActivityId = activity.ActivityId,
-                    RegistrationDate = DateTime.UtcNow,
-                    Status = "Approved", // Or "Pending" if admin approval is needed
-                    PaymentStatus = "Paid", // Assuming immediate payment for checkout
-                    AttendanceStatus = "Not Attended",
-                    Notes = "Đăng ký qua giỏ hàng"
-                };
-
-                _context.Registrations.Add(registration);
-
-                // Mark cart item as paid
-                cartItem.IsPaid = true;
-
+            if (existingRegistration != null && existingRegistration.PaymentStatus == "Paid")
+            {
+                TempData["Error"] = "Hoạt động này đã được thanh toán và đăng ký.";
+                _context.CartItems.Remove(cartItem); // Remove from cart if already paid
                 await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
+            }
 
-                _logger.LogInformation("Người dùng {UserId} đã thanh toán thành công hoạt động {ActivityId} từ giỏ hàng.", userId, activity.ActivityId);
-                TempData["Success"] = $"Bạn đã đăng ký thành công hoạt động '{activity.Title}'.";
-                return RedirectToAction("MyRegistrations", "Registration");
-            }
-            catch (Exception ex)
+            // Simulate payment process
+            var payment = new Payment
             {
-                _logger.LogError(ex, "Lỗi khi thanh toán mục {CartItemId} trong giỏ hàng cho người dùng {UserId}", id, GetUserId());
-                TempData["Error"] = "Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại.";
-                return View("Error");
+                RegistrationId = existingRegistration?.RegistrationId ?? 0, // Link to existing registration if any
+                UserId = userId, // The user making the payment (parent/admin)
+                Amount = cartItem.Activity.Price,
+                PaymentDate = DateTime.UtcNow,
+                PaymentMethod = "Online Transfer", // Example method
+                PaymentStatus = "Completed", // Simulate successful payment
+                TransactionId = Guid.NewGuid().ToString(),
+                Notes = $"Payment for activity: {cartItem.Activity.Title} by {currentUser.FullName ?? currentUser.UserName}"
+            };
+
+            _context.Payments.Add(payment);
+
+            // Update registration status if it exists, or create a new one
+            if (existingRegistration != null)
+            {
+                existingRegistration.Status = "Approved";
+                existingRegistration.PaymentStatus = "Paid";
+                existingRegistration.AmountPaid = payment.Amount;
+                existingRegistration.Activity.CurrentParticipants++; // Increment participant count
+                if (existingRegistration.Activity.CurrentParticipants >= existingRegistration.Activity.MaxParticipants)
+                {
+                    existingRegistration.Activity.IsFull = true;
+                    existingRegistration.Activity.Status = "Full";
+                }
             }
+            else
+            {
+                // Create a new registration if it doesn't exist (e.g., added to cart directly by parent)
+                var studentUser = cartItem.User; // The student associated with this cart item
+                var newRegistration = new Registration
+                {
+                    ActivityId = cartItem.ActivityId,
+                    StudentId = studentUser.Id,
+                    ParentId = userId, // The parent making the payment
+                    UserId = studentUser.Id, // For compatibility
+                    RegistrationDate = DateTime.UtcNow,
+                    Status = "Approved",
+                    PaymentStatus = "Paid",
+                    AmountPaid = payment.Amount,
+                    AttendanceStatus = "Not Started"
+                };
+                _context.Registrations.Add(newRegistration);
+                newRegistration.Activity.CurrentParticipants++; // Increment participant count
+                if (newRegistration.Activity.CurrentParticipants >= newRegistration.Activity.MaxParticipants)
+                {
+                    newRegistration.Activity.IsFull = true;
+                    newRegistration.Activity.Status = "Full";
+                }
+                payment.Registration = newRegistration; // Link payment to new registration
+            }
+
+            cartItem.IsPaid = true; // Mark cart item as paid
+            _context.CartItems.Remove(cartItem); // Remove from cart after successful payment
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Thanh toán thành công cho hoạt động '{cartItem.Activity.Title}'!";
+            _logger.LogInformation("Người dùng {UserId} đã thanh toán cho hoạt động {ActivityId}", userId, cartItem.ActivityId);
+            return RedirectToAction("MyRegistrations", "Registration");
         }
     }
 }

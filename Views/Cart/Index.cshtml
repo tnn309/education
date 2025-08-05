@@ -1,44 +1,186 @@
-@model List<EducationSystem.Models.CartItem>
+@model List<CartItem>
+@using EducationSystem.Models
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 
 @{
-    ViewData["Title"] = "Giỏ hàng của tôi";
+    ViewData["Title"] = "Giỏ hàng";
+    var currentUser = await UserManager.GetUserAsync(User);
+    bool isStudent = currentUser != null && await UserManager.IsInRoleAsync(currentUser, "Student");
 }
 
-<h2>Giỏ hàng của tôi</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-shopping-cart"></i> Giỏ hàng của tôi</h1>
+    <a asp-controller="Activity" asp-action="List" class="btn btn-outline-primary">
+        <i class="fas fa-plus"></i> Thêm hoạt động
+    </a>
+</div>
 
 @if (Model != null && Model.Any())
 {
-    <div class="cart-items">
-        @foreach (var item in Model)
-        {
-            <div class="activity-card">
-                <h3>@item.Activity?.Title</h3>
-                <p><strong>Giá:</strong> @(item.Activity?.Price == null || item.Activity.Price == 0 ? "Miễn phí" : $"{item.Activity.Price:N0} VNĐ")</p>
-                <p><strong>Thêm vào lúc:</strong> @item.AddedAt.ToString("dd/MM/yyyy HH:mm")</p>
-                <p><strong>Trạng thái:</strong> @(item.IsPaid ? "Đã thanh toán" : "Chưa thanh toán")</p>
-
-                @if (!item.IsPaid)
-                {
-                    <form asp-controller="Cart" asp-action="Checkout" method="post" style="display:inline;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@item.CartItemId" />
-                        <button type="submit">Thanh toán</button>
-                    </form>
-                    <form asp-controller="Cart" asp-action="RemoveFromCart" method="post" style="display:inline; margin-left: 10px;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@item.CartItemId" />
-                        <button type="submit">Xóa khỏi giỏ hàng</button>
-                    </form>
-                }
-                else
-                {
-                    <p style="color: green; font-weight: bold;">Đã thanh toán</p>
-                }
+    <div class="row">
+        <div class="col-lg-8">
+            @foreach (var item in Model)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                @if (!string.IsNullOrEmpty(item.Activity?.ImageUrl))
+                                {
+                                    <img src="@item.Activity.ImageUrl" class="img-fluid rounded" alt="@item.Activity.Title" style="height: 120px; object-fit: cover;">
+                                }
+                                else
+                                {
+                                    <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 120px;">
+                                        <i class="fas fa-image fa-2x text-muted"></i>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="card-title">@item.Activity?.Title</h5>
+                                <p class="card-text text-muted">
+                                    @if (item.Activity?.Description != null && item.Activity.Description.Length > 100)
+                                    {
+                                        @(item.Activity.Description.Substring(0, 100) + "...")
+                                    }
+                                    else
+                                    {
+                                        @item.Activity?.Description
+                                    }
+                                </p>
+                                <div class="activity-info">
+                                    <small class="text-muted">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        @item.Activity?.StartDate.ToString("dd/MM/yyyy") - @item.Activity?.EndDate.ToString("dd/MM/yyyy")
+                                    </small><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        @item.Activity?.StartTime.ToString(@"hh\:mm") - @item.Activity?.EndTime.ToString(@"hh\:mm")
+                                    </small><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        @item.Activity?.Location
+                                    </small><br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        Đăng ký bởi: @(item.User?.FullName ?? item.User?.UserName)
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <h4 class="text-primary fw-bold mb-3">@item.Activity?.Price.ToString("N0") VND</h4>
+                                <div class="d-grid gap-2">
+                                    @if (!isStudent) // Chỉ hiển thị nút thanh toán nếu không phải là học sinh
+                                    {
+                                        <form asp-action="Checkout" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@item.CartItemId" />
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-credit-card"></i> Thanh toán
+                                            </button>
+                                        </form>
+                                    }
+                                    <form asp-action="RemoveFromCart" method="post" class="d-inline">
+                                        <input type="hidden" name="id" value="@item.CartItemId" />
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                onclick="return confirm('Bạn có chắc muốn xóa hoạt động này khỏi giỏ hàng?')">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                    <a asp-controller="Activity" asp-action="Details" asp-route-id="@item.Activity?.ActivityId" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i> Xem chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <!-- Cart Summary -->
+        <div class="col-lg-4">
+            <div class="card sticky-top">
+                <div class="card-header">
+                    <h5 class="mb-0">Tóm tắt đơn hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Số hoạt động:</span>
+                        <span>@Model.Count</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Tổng tiền:</span>
+                        <strong class="text-primary">@Model.Sum(x => x.Activity?.Price ?? 0).ToString("N0") VND</strong>
+                    </div>
+                    <hr>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        @if (isStudent)
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Thông báo:</strong> Học sinh không được phép thanh toán. Vui lòng liên hệ phụ huynh để thanh toán cho các hoạt động này.
+                            </div>
+                        }
+                        else if (User.IsInRole("Parent"))
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Lưu ý:</strong> Chỉ phụ huynh mới có thể thanh toán cho các hoạt động trong giỏ hàng.
+                            </div>
+                        }
+                        else // Các vai trò khác (Teacher, Admin) cũng không thanh toán qua giỏ hàng này
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Thông báo:</strong> Vai trò của bạn không được phép thanh toán qua giỏ hàng.
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Lưu ý:</strong> Vui lòng đăng nhập để tiến hành thanh toán hoặc thêm hoạt động vào giỏ hàng.
+                        </div>
+                    }
+                </div>
             </div>
-        }
+            <!-- Payment Info -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Thông tin thanh toán</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        <i class="fas fa-shield-alt text-success"></i>
+                        Thanh toán an toàn và bảo mật
+                    </p>
+                    <p class="text-muted small">
+                        <i class="fas fa-undo text-info"></i>
+                        Chính sách hoàn tiền trong 24h
+                    </p>
+                    <p class="text-muted small">
+                        <i class="fas fa-headset text-primary"></i>
+                        Hỗ trợ 24/7: <a href="mailto:tanndh.dev@gmail.com">tanndh.dev@gmail.com</a>
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 }
 else
 {
-    <p>Giỏ hàng của bạn trống.</p>
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+        <h3 class="text-muted">Giỏ hàng trống</h3>
+        <p class="text-muted">Bạn chưa thêm hoạt động nào vào giỏ hàng.</p>
+        <a asp-controller="Activity" asp-action="List" class="btn btn-primary">
+            <i class="fas fa-search"></i> Khám phá hoạt động
+        </a>
+    </div>
 }

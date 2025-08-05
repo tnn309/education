@@ -1,60 +1,152 @@
-@model List<EducationSystem.Models.Registration>
-
+@model List<Registration>
 @{
     ViewData["Title"] = "Đăng ký của tôi";
 }
 
-<h2>Đăng ký của tôi</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-list-alt"></i> Đăng ký của tôi</h1>
+    <a asp-controller="Activity" asp-action="List" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Đăng ký thêm hoạt động
+    </a>
+</div>
 
 @if (Model != null && Model.Any())
 {
-    <div class="registration-list">
-        @foreach (var reg in Model)
+    <div class="row">
+        @foreach (var registration in Model)
         {
-            <div class="activity-card">
-                <h3>Hoạt động: @reg.Activity?.Title</h3>
-                <p><strong>Ngày đăng ký:</strong> @reg.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</p>
-                <p><strong>Trạng thái:</strong> @reg.Status</p>
-                <p><strong>Trạng thái thanh toán:</strong> @reg.PaymentStatus</p>
-                <p><strong>Trạng thái tham dự:</strong> @reg.AttendanceStatus</p>
-                @if (!string.IsNullOrEmpty(reg.Notes))
-                {
-                    <p><strong>Ghi chú:</strong> @reg.Notes</p>
-                }
-                @if (reg.Student != null && reg.Student.Id != reg.UserId)
-                {
-                    <p><strong>Đăng ký cho:</strong> @reg.Student.FullName (@reg.Student.UserName)</p>
-                }
-                @if (reg.Parent != null)
-                {
-                    <p><strong>Phụ huynh:</strong> @reg.Parent.FullName (@reg.Parent.UserName)</p>
-                }
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title">@registration.Activity?.Title</h5>
+                            <div>
+                                @switch (registration.Status)
+                                {
+                                    case "Pending":
+                                        <span class="badge bg-warning">Chờ duyệt</span>
+                                        break;
+                                    case "Approved":
+                                        <span class="badge bg-success">Đã duyệt</span>
+                                        break;
+                                    case "Rejected":
+                                        <span class="badge bg-danger">Từ chối</span>
+                                        break;
+                                    case "Cancelled":
+                                        <span class="badge bg-secondary">Đã hủy</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-light text-dark">@registration.Status</span>
+                                        break;
+                                }
+                                @switch (registration.PaymentStatus)
+                                {
+                                    case "Paid":
+                                        <span class="badge bg-success ms-1">Đã thanh toán</span>
+                                        break;
+                                    case "Unpaid":
+                                        <span class="badge bg-warning ms-1">Chưa thanh toán</span>
+                                        break;
+                                    case "Refunded":
+                                        <span class="badge bg-info ms-1">Đã hoàn tiền</span>
+                                        break;
+                                    case "N/A":
+                                        break;
+                                    default:
+                                        <span class="badge bg-light text-dark ms-1">@registration.PaymentStatus</span>
+                                        break;
+                                }
+                            </div>
+                        </div>
 
-                @if (reg.Status != "Cancelled" && reg.Status != "Rejected" && reg.Activity != null && reg.Activity.StartDate > DateTime.UtcNow.Date)
-                {
-                    <form asp-controller="Registration" asp-action="CancelRegistration" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@reg.RegistrationId" />
-                        <button type="submit">Hủy đăng ký</button>
-                    </form>
-                }
-                else if (reg.Status == "Cancelled")
-                {
-                    <p style="color: red; font-weight: bold;">Đăng ký này đã bị hủy.</p>
-                }
-                else if (reg.Status == "Rejected")
-                {
-                    <p style="color: orange; font-weight: bold;">Đăng ký này đã bị từ chối.</p>
-                }
-                else if (reg.Activity != null && reg.Activity.StartDate <= DateTime.UtcNow.Date)
-                {
-                    <p>Không thể hủy đăng ký cho hoạt động đã bắt đầu.</p>
-                }
+                        @if (registration.Activity?.Type == "paid")
+                        {
+                            <h6 class="text-primary mb-2">@registration.Activity.Price.ToString("N0") VND</h6>
+                        }
+                        else
+                        {
+                            <h6 class="text-success mb-2">Miễn phí</h6>
+                        }
+
+                        <p class="card-text text-muted">
+                            @if (registration.Activity?.Description != null && registration.Activity.Description.Length > 100)
+                            {
+                                @(registration.Activity.Description.Substring(0, 100) + "...")
+                            }
+                            else
+                            {
+                                @registration.Activity?.Description
+                            }
+                        </p>
+
+                        <div class="activity-info mb-3">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-calendar text-muted me-2"></i>
+                                <small class="text-muted">@registration.Activity?.StartDate.ToString("dd/MM/yyyy") - @registration.Activity?.EndDate.ToString("dd/MM/yyyy")</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-clock text-muted me-2"></i>
+                                <small class="text-muted">@registration.Activity?.StartTime.ToString(@"hh\:mm") - @registration.Activity?.EndTime.ToString(@"hh\:mm")</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                                <small class="text-muted">@registration.Activity?.Location</small>
+                            </div>
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="fas fa-user text-muted me-2"></i>
+                                <small class="text-muted">Học sinh: @(registration.Student?.FullName ?? registration.Student?.UserName)</small>
+                            </div>
+                            @if (registration.Parent != null)
+                            {
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="fas fa-user-friends text-muted me-2"></i>
+                                    <small class="text-muted">Phụ huynh: @registration.Parent.FullName</small>
+                                </div>
+                            }
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-calendar-plus text-muted me-2"></i>
+                                <small class="text-muted">Đăng ký: @registration.RegistrationDate.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(registration.Notes))
+                        {
+                            <div class="alert alert-info">
+                                <small><strong>Ghi chú:</strong> @registration.Notes</small>
+                            </div>
+                        }
+
+                        <div class="d-flex gap-2">
+                            <a asp-controller="Activity" asp-action="Details" asp-route-id="@registration.Activity?.ActivityId" 
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> Xem chi tiết
+                            </a>
+                            
+                            @if (registration.Status == "Approved" && registration.Activity?.StartDate > DateTime.UtcNow.Date)
+                            {
+                                <form asp-action="CancelRegistration" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@registration.RegistrationId" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                            onclick="return confirm('Bạn có chắc muốn hủy đăng ký này?')">
+                                        <i class="fas fa-times"></i> Hủy đăng ký
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
             </div>
         }
     </div>
 }
 else
 {
-    <p>Bạn chưa có đăng ký nào.</p>
+    <div class="text-center py-5">
+        <i class="fas fa-list-alt fa-5x text-muted mb-4"></i>
+        <h3 class="text-muted">Chưa có đăng ký nào</h3>
+        <p class="text-muted">Bạn chưa đăng ký hoạt động nào. Hãy khám phá các hoạt động thú vị!</p>
+        <a asp-controller="Activity" asp-action="List" class="btn btn-primary">
+            <i class="fas fa-search"></i> Khám phá hoạt động
+        </a>
+    </div>
 }

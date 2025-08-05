@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Npgsql; // Ensure this is present for PostgreSQL
 using System.Security.Claims;
+using Microsoft.Extensions.Logging; // Đảm bảo có using này
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,27 +13,28 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 // Configure PostgreSQL connection
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    options.UseNpgsql(connectionString)
+           .EnableSensitiveDataLogging() // Hữu ích để debug trong môi trường dev
+           .LogTo(Console.WriteLine, LogLevel.Information); // Log SQL commands
+});
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false; // For simplicity, disable email confirmation
+    options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = false;
     options.Password.RequiredLength = 6;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
     options.Password.RequireLowercase = false;
     options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
+}).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages(); // Required for Identity UI
+builder.Services.AddRazorPages();
 
-// Configure authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
@@ -42,7 +44,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrTeacher", policy => policy.RequireRole("Admin", "Teacher"));
 });
 
-// Configure cookie settings for Identity
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Account/Login";
@@ -52,7 +53,6 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -65,30 +65,35 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapRazorPages(); // Required for Identity UI
+app.MapRazorPages();
 
-// Seed roles and admin user
+// Seed roles and admin user, and sample data
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>(); // Lấy logger cho Program
 
     try
     {
         // Apply migrations
-        context.Database.Migrate();
-        logger.LogInformation("Database migrations applied successfully.");
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        else
+        {
+            logger.LogInformation("No pending migrations to apply.");
+        }
 
         // Seed Roles
         string[] roleNames = { "Admin", "Teacher", "Parent", "Student" };
@@ -111,7 +116,7 @@ using (var scope = app.Services.CreateScope())
                 Email = "admin@example.com",
                 FullName = "Admin User",
                 EmailConfirmed = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow // Đảm bảo UTC
             };
             var result = await userManager.CreateAsync(adminUser, "Admin123!");
             if (result.Succeeded)
@@ -124,182 +129,103 @@ using (var scope = app.Services.CreateScope())
                 logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }
-
-        // Seed Sample Teachers
-        var teacher1 = await context.Teachers.FirstOrDefaultAsync(t => t.Email == "teacher1@example.com");
-        if (teacher1 == null)
+        else
         {
-            teacher1 = new Teacher
+            // Ensure admin user has the Admin role if they already exist
+            if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
             {
-                FullName = "Nguyễn Thị B",
-                Email = "teacher1@example.com",
-                PhoneNumber = "0912345678",
-                Specialization = "Tiếng Anh",
-                Experience = 7,
-                Bio = "Giáo viên tiếng Anh với phương pháp giảng dạy sáng tạo.",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.Teachers.Add(teacher1);
-            await context.SaveChangesAsync();
-            logger.LogInformation("Seeded teacher: {FullName}", teacher1.FullName);
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+                logger.LogInformation("Admin user 'admin' assigned to 'Admin' role.", adminUser.UserName);
+            }
         }
 
-        var teacher2 = await context.Teachers.FirstOrDefaultAsync(t => t.Email == "teacher2@example.com");
-        if (teacher2 == null)
+        // Seed Sample Teacher (Tích hợp lại logic từ DbInitializer)
+        if (!context.Teachers.Any())
         {
-            teacher2 = new Teacher
+            var sampleTeacher = new Teacher
             {
-                FullName = "Trần Văn C",
-                Email = "teacher2@example.com",
-                PhoneNumber = "0987654321",
-                Specialization = "Vật lý",
+                FullName = "Nguyễn Văn A",
+                Email = "nguyenvana@example.com",
+                PhoneNumber = "0901234567",
+                Specialization = "Toán học",
                 Experience = 10,
-                Bio = "Chuyên gia vật lý, giảng dạy từ cơ bản đến nâng cao.",
+                Bio = "Giáo viên toán với hơn 10 năm kinh nghiệm giảng dạy.",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow // Đảm bảo UTC
             };
-            context.Teachers.Add(teacher2);
+            context.Teachers.Add(sampleTeacher);
             await context.SaveChangesAsync();
-            logger.LogInformation("Seeded teacher: {FullName}", teacher2.FullName);
+            logger.LogInformation("Sample teacher '{FullName}' created.", sampleTeacher.FullName);
         }
 
-        // Seed Sample Users (Parent and Student)
-        var parentUser = await userManager.FindByNameAsync("parent1");
-        if (parentUser == null)
+        // Seed Sample Activities (Tích hợp lại logic từ DbInitializer)
+        if (!context.Activities.Any())
         {
-            parentUser = new ApplicationUser
+            var teacher = await context.Teachers.FirstOrDefaultAsync();
+            var creator = await userManager.FindByNameAsync("admin");
+
+            if (teacher != null && creator != null)
             {
-                UserName = "parent1",
-                Email = "parent1@example.com",
-                FullName = "Phụ huynh A",
-                DateOfBirth = DateTime.SpecifyKind(new DateTime(1980, 5, 15), DateTimeKind.Utc),
-                Address = "123 Đường ABC, Quận 1",
-                EmailConfirmed = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            var result = await userManager.CreateAsync(parentUser, "Parent123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(parentUser, "Parent");
-                logger.LogInformation("Parent user 'parent1' created and assigned role.");
+                var sampleActivity1 = new Activity
+                {
+                    Title = "Lớp học Toán cơ bản",
+                    Description = "Khóa học dành cho học sinh tiểu học, giúp củng cố kiến thức toán cơ bản.",
+                    Type = "paid",
+                    Price = 500000,
+                    MaxParticipants = 20,
+                    MinAge = 6,
+                    MaxAge = 10,
+                    Location = "Phòng học A101",
+                    StartDate = DateTime.Today.ToUniversalTime().Date, // Chuyển đổi sang UTC và lấy phần Date
+                    EndDate = DateTime.Today.ToUniversalTime().Date,   // Chuyển đổi sang UTC và lấy phần Date
+                    StartTime = new TimeSpan(9, 0, 0),
+                    EndTime = new TimeSpan(11, 0, 0),
+                    Skills = "Giải toán, tư duy logic",
+                    Requirements = "Không có",
+                    TeacherId = teacher.TeacherId,
+                    IsActive = true,
+                    IsFull = false,
+                    LikesCount = 0,
+                    CommentsCount = 0,
+                    Status = "Published",
+                    CreatorId = creator.Id,
+                    CreatedAt = DateTime.UtcNow, // Đảm bảo UTC
+                    UpdatedAt = DateTime.UtcNow  // Đảm bảo UTC
+                };
+                context.Activities.Add(sampleActivity1);
+
+                var sampleActivity2 = new Activity
+                {
+                    Title = "Câu lạc bộ Đọc sách",
+                    Description = "Hoạt động miễn phí giúp học sinh yêu thích đọc sách và phát triển kỹ năng đọc hiểu.",
+                    Type = "free",
+                    Price = 0,
+                    MaxParticipants = 30,
+                    CurrentParticipants = 0,
+                    MinAge = 8,
+                    MaxAge = 12,
+                    Location = "Thư viện trường",
+                    StartDate = DateTime.Today.ToUniversalTime().Date, // Chuyển đổi sang UTC và lấy phần Date
+                    EndDate = DateTime.Today.ToUniversalTime().Date,   // Chuyển đổi sang UTC và lấy phần Date
+                    StartTime = new TimeSpan(14, 0, 0),
+                    EndTime = new TimeSpan(16, 0, 0),
+                    Skills = "Đọc hiểu, phân tích, sáng tạo",
+                    Requirements = "Yêu thích đọc sách",
+                    TeacherId = teacher.TeacherId,
+                    IsActive = true,
+                    IsFull = false,
+                    LikesCount = 0,
+                    CommentsCount = 0,
+                    Status = "Published",
+                    CreatorId = creator.Id,
+                    CreatedAt = DateTime.UtcNow, // Đảm bảo UTC
+                    UpdatedAt = DateTime.UtcNow  // Đảm bảo UTC
+                };
+                context.Activities.Add(sampleActivity2);
+
+                await context.SaveChangesAsync();
+                logger.LogInformation("Sample activities created.");
             }
-        }
-
-        var studentUser = await userManager.FindByNameAsync("student1");
-        if (studentUser == null)
-        {
-            studentUser = new ApplicationUser
-            {
-                UserName = "student1",
-                Email = "student1@example.com",
-                FullName = "Học sinh X",
-                DateOfBirth = DateTime.SpecifyKind(new DateTime(2010, 8, 20), DateTimeKind.Utc),
-                Address = "123 Đường ABC, Quận 1",
-                ParentId = parentUser?.Id, // Link to parent
-                EmailConfirmed = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            var result = await userManager.CreateAsync(studentUser, "Student123!");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(studentUser, "Student");
-                logger.LogInformation("Student user 'student1' created and assigned role.");
-            }
-        }
-
-        // Seed Sample Activities
-        var activity1 = await context.Activities.FirstOrDefaultAsync(a => a.Title == "Lớp học Toán cơ bản");
-        if (activity1 == null)
-        {
-            activity1 = new Activity
-            {
-                Title = "Lớp học Toán cơ bản",
-                Description = "Khóa học toán cơ bản dành cho học sinh tiểu học, giúp củng cố kiến thức nền tảng.",
-                ImageUrl = "/images/math_class.jpg",
-                Type = "paid",
-                Price = 500000,
-                MaxParticipants = 30,
-                MinAge = 6,
-                MaxAge = 10,
-                Skills = "Tư duy logic, Giải quyết vấn đề",
-                Requirements = "Không yêu cầu kinh nghiệm trước",
-                Location = "Phòng học A101",
-                StartDate = DateTime.UtcNow.AddDays(7).Date,
-                EndDate = DateTime.UtcNow.AddDays(14).Date,
-                StartTime = new TimeSpan(9, 0, 0),
-                EndTime = new TimeSpan(11, 0, 0),
-                IsActive = true,
-                Status = "Published",
-                TeacherId = teacher1?.TeacherId,
-                CreatedBy = adminUser?.Id,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.Activities.Add(activity1);
-            await context.SaveChangesAsync();
-            logger.LogInformation("Seeded activity: {Title}", activity1.Title);
-        }
-
-        var activity2 = await context.Activities.FirstOrDefaultAsync(a => a.Title == "Lớp học Tiếng Anh giao tiếp");
-        if (activity2 == null)
-        {
-            activity2 = new Activity
-            {
-                Title = "Lớp học Tiếng Anh giao tiếp",
-                Description = "Khóa học tập trung vào kỹ năng nghe nói, giúp học sinh tự tin giao tiếp.",
-                ImageUrl = "/images/english_class.jpg",
-                Type = "free",
-                Price = 0,
-                MaxParticipants = 25,
-                MinAge = 8,
-                MaxAge = 14,
-                Skills = "Giao tiếp, Nghe, Nói",
-                Requirements = "Có kiến thức tiếng Anh cơ bản",
-                Location = "Phòng học B203",
-                StartDate = DateTime.UtcNow.AddDays(10).Date,
-                EndDate = DateTime.UtcNow.AddDays(20).Date,
-                StartTime = new TimeSpan(14, 0, 0),
-                EndTime = new TimeSpan(16, 0, 0),
-                IsActive = true,
-                Status = "Published",
-                TeacherId = teacher1?.TeacherId,
-                CreatedBy = adminUser?.Id,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.Activities.Add(activity2);
-            await context.SaveChangesAsync();
-            logger.LogInformation("Seeded activity: {Title}", activity2.Title);
-        }
-
-        var activity3 = await context.Activities.FirstOrDefaultAsync(a => a.Title == "Khóa học Lập trình Scratch");
-        if (activity3 == null)
-        {
-            activity3 = new Activity
-            {
-                Title = "Khóa học Lập trình Scratch",
-                Description = "Giới thiệu lập trình cho trẻ em thông qua nền tảng Scratch trực quan.",
-                ImageUrl = "/images/scratch_coding.jpg",
-                Type = "paid",
-                Price = 750000,
-                MaxParticipants = 15,
-                MinAge = 7,
-                MaxAge = 12,
-                Skills = "Lập trình, Sáng tạo, Giải quyết vấn đề",
-                Requirements = "Máy tính có kết nối internet",
-                Location = "Phòng Lab C101",
-                StartDate = DateTime.UtcNow.AddDays(15).Date,
-                EndDate = DateTime.UtcNow.AddDays(25).Date,
-                StartTime = new TimeSpan(10, 0, 0),
-                EndTime = new TimeSpan(12, 0, 0),
-                IsActive = true,
-                Status = "Published",
-                TeacherId = teacher2?.TeacherId,
-                CreatedBy = adminUser?.Id,
-                CreatedAt = DateTime.UtcNow
-            };
-            context.Activities.Add(activity3);
-            await context.SaveChangesAsync();
-            logger.LogInformation("Seeded activity: {Title}", activity3.Title);
         }
     }
     catch (Exception ex)
