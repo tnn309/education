@@ -11,11 +11,11 @@
 </div>
 
 <!-- Users Table -->
-<div class="card">
-    <div class="card-header">
+<div class="card shadow-sm rounded-lg border-0" style="overflow-x: auto;">
+    <div class="card-header bg-light border-bottom">
         <h5 class="mb-0">Danh sách người dùng (@(Model?.Count ?? 0))</h5>
     </div>
-    <div class="card-body">
+    <div class="card-body p-4">
         @if (Model != null && Model.Any())
         {
             <div class="table-responsive">
@@ -85,10 +85,10 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                        <button class="btn btn-sm btn-outline-primary" title="Xem chi tiết">Xem
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">
+                                        <button class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">Sửa
                                             <i class="fas fa-edit"></i>
                                         </button>
                                         @if (user.UserName != "admin")
@@ -120,32 +120,32 @@
 <!-- User Statistics -->
 <div class="row mt-4">
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-lg border-0" style="overflow-x: auto;">
+            <div class="card-body text-center">
                 <h4 class="text-primary">@((Model?.Count(u => !string.IsNullOrEmpty(u.ParentId)) ?? 0))</h4>
                 <p class="mb-0">Học sinh</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-lg border-0" style="overflow-x: auto;">
+            <div class="card-body text-center">
                 <h4 class="text-success">@((Model?.Count(u => u.Children != null && u.Children.Any()) ?? 0))</h4>
                 <p class="mb-0">Phụ huynh</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-lg border-0" style="overflow-x: auto;">
+            <div class="card-body text-center">
                 <h4 class="text-info">@((Model?.Count(u => u.CreatedAt >= DateTime.UtcNow.AddDays(-30)) ?? 0))</h4>
                 <p class="mb-0">Mới (30 ngày)</p>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card text-center">
-            <div class="card-body">
+        <div class="card shadow-sm rounded-lg border-0" style="overflow-x: auto;">
+            <div class="card-body text-center">
                 <h4 class="text-warning">@((Model?.Count ?? 0))</h4>
                 <p class="mb-0">Tổng cộng</p>
             </div>

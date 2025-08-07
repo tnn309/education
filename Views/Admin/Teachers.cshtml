@@ -18,10 +18,10 @@
 <!-- Teachers Grid -->
 @if (Model != null && Model.Any())
 {
-    <div class="row">
+    <div class="row" id="teachersGrid">
         @foreach (var teacher in Model)
         {
-            <div class="col-lg-4 col-md-6 mb-4">
+            <div class="col-lg-4 col-md-6 mb-4" data-teacher-id="@teacher.TeacherId">
                 <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -91,7 +91,7 @@
                                     <i class="fas fa-edit"></i> Sửa
                                 </button>
                                 <button class="btn btn-outline-danger btn-sm" title="Xóa"
-                                        onclick="return confirm('Bạn có chắc muốn xóa giáo viên này?')">
+                                        onclick="deleteTeacher('@teacher.TeacherId')">
                                     <i class="fas fa-trash"></i> Xóa
                                 </button>
                             </div>
@@ -166,7 +166,45 @@ else
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        // Any client-side validation or interaction for the modal can go here
-        // The form submission is now handled by asp-action and asp-controller
+        function deleteTeacher(teacherId) {
+            if (confirm('Bạn có chắc muốn xóa giáo viên này?')) {
+                fetch('/Admin/DeleteTeacher', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ id: teacherId })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        const teacherCard = document.querySelector(`[data-teacher-id="${teacherId}"]`);
+                        if (teacherCard) {
+                            teacherCard.remove();
+                            // Kiểm tra nếu không còn giáo viên nào, hiển thị thông báo "Chưa có giáo viên nào"
+                            const teachersGrid = document.getElementById('teachersGrid');
+                            if (!teachersGrid || teachersGrid.children.length === 0) {
+                                teachersGrid.innerHTML = `
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-chalkboard-teacher fa-5x text-muted mb-4"></i>
+                                        <h3 class="text-muted">Chưa có giáo viên nào</h3>
+                                        <p class="text-muted">Hãy thêm giáo viên đầu tiên cho hệ thống.</p>
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeacherModal">
+                                            <i class="fas fa-plus"></i> Thêm giáo viên
+                                        </button>
+                                    </div>
+                                `;
+                            }
+                        }
+                    } else {
+                        alert('Có lỗi xảy ra khi xóa giáo viên.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi xóa giáo viên.');
+                });
+            }
+        }
     </script>
 }

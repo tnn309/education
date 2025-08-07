@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;                            
 using EducationSystem.Models;
 using EducationSystem.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -7,70 +7,72 @@ using EducationSystem.ViewModels;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System;
-using Microsoft.EntityFrameworkCore; // Added for Include
+using Microsoft.EntityFrameworkCore; 
 
 namespace EducationSystem.Controllers
 {
-    [AllowAnonymous]
+    [AllowAnonymous]                                                                                    // cho phép người dùng không đăng nhập truy cập vào các action trong controller này
     public class AccountController : Controller
     {
-        // Tiêm các dịch vụ vào dự án 
+        // Tiêm các dịch vụ vào dự án, readonly để không thay đổi giá trị của nó
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AccountController> _logger;
 
-        // khởi tạo hàm rỗng
+        // contructor để khởi tạo các dịch vụ đã tiêm
+        // Nếu không có dịch vụ nào được tiêm thì sẽ ném ra ngoại lệ ArgumentNullException để chương trình vẫn chạy bình thường
         public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, ILogger<AccountController> logger)
         {
-            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
-            _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
-            _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));         // thông tin ng dùng
+            _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));   // thông tin đăng nhập
+            _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));         // thông tin role
+            _context = context ?? throw new ArgumentNullException(nameof(context));                     // thông tin cơ sở dữ liệu
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));                        // thông tin log
         }
 
-        [HttpGet] // lấy dữ liệu link đăng nhập của user
+        [HttpGet]                                                                                       // Action để hiển thị trang đăng nhập
         public IActionResult Login(string? returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            return View(new LoginViewModel());
+            ViewData["ReturnUrl"] = returnUrl;                                                          // Lưu trữ URL trả về để chuyển hướng sau khi đăng nhập thành công
+            return View(new LoginViewModel());                                                          // Trả về view đăng nhập với model rỗng
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpPost]                                                                                      // Action để xử lý đăng nhập
+        [ValidateAntiForgeryToken]                                                                      // Bảo vệ khỏi tấn công CSRF
+        
+        // đăng nhập người dùng 
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
-            ViewData["ReturnUrl"] = returnUrl;
+            ViewData["ReturnUrl"] = returnUrl;                                                          // Lưu trữ URL trả về để chuyển hướng sau khi đăng nhập thành công
 
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid)                                                                    // Kiểm tra tính hợp lệ của model
             {
-                return View(model);
+                return View(model);                                                                     // Nếu không hợp lệ, trả về view đăng nhập với model hiện tại
             }
 
             try
             {
-                var result = await _signInManager.PasswordSignInAsync(
-                    model.Username, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(model.Username, model.Password, model.RememberMe, lockoutOnFailure: false);   // Thử đăng nhập với tên đăng nhập, mật khẩu và tùy chọn ghi nhớ đăng nhập
 
-                if (result.Succeeded)
+                if (result.Succeeded)                                                                   // đăng nhập thành công                                        
                 {
                     _logger.LogInformation("Người dùng {Username} đã đăng nhập thành công.", model.Username);
                     return RedirectToLocal(returnUrl);
                 }
 
-                if (result.IsLockedOut)
+                if (result.IsLockedOut)                                                                 // Tài khoản bị khóa                                     
                 {
                     _logger.LogWarning("Tài khoản {Username} đã bị khóa.", model.Username);
                     ModelState.AddModelError("", "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.");
                 }
-                else
+                else                                                                                    // đăng nhập thất bại                           
                 {
                     ModelState.AddModelError("", "Đăng nhập thất bại. Vui lòng kiểm tra tên đăng nhập và mật khẩu.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)                                                                        // ngoại lệ và ghi log lỗi
             {
                 _logger.LogError(ex, "Lỗi xảy ra khi đăng nhập cho người dùng {Username}", model.Username);
                 ModelState.AddModelError("", "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
@@ -79,14 +81,17 @@ namespace EducationSystem.Controllers
             return View(model);
         }
 
-        [HttpGet]
+        [HttpGet]                                                                                        // Action để hiển thị trang đăng ký
         public IActionResult Register()
         {
-            return View(new RegisterViewModel());
+            return View(new RegisterViewModel());                                                         
         }
 
-        [HttpPost]
+        [HttpPost]                                                                                      // Action để xử lý đăng ký người dùng mới
         [ValidateAntiForgeryToken]
+        
+
+        // đăng kí người dùng mới
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
@@ -110,7 +115,7 @@ namespace EducationSystem.Controllers
                 {
                     var parent = await _userManager.Users
                                  .FirstOrDefaultAsync(u => u.UserName == model.ParentUsername || u.Email == model.ParentUsername);
-                                 
+
                     if (parent == null || !await _userManager.IsInRoleAsync(parent, "Parent"))
                     {
                         ModelState.AddModelError("ParentUsername", "Phụ huynh không tồn tại hoặc không phải là vai trò phụ huynh.");
@@ -168,7 +173,7 @@ namespace EducationSystem.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi xảy ra khi đăng xuất.");
-                TempData["Error"] = "��ã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.";
+                TempData["Error"] = "Đã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.";
                 return RedirectToAction("Index", "Home");
             }
         }

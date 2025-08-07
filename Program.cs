@@ -2,24 +2,24 @@ using EducationSystem.Data;
 using EducationSystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Npgsql; // Ensure this is present for PostgreSQL
+using Npgsql; 
 using System.Security.Claims;
-using Microsoft.Extensions.Logging; // Đảm bảo có using này
+using Microsoft.Extensions.Logging; 
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);       // tạo builder cho ứng dụng 
 
-// Add services to the container.
+// thêm dịch vụ DbContext với PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-// Configure PostgreSQL connection
+// kết nối đến cơ sở dữ liệu PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseNpgsql(connectionString)
-           .EnableSensitiveDataLogging() // Hữu ích để debug trong môi trường dev
-           .LogTo(Console.WriteLine, LogLevel.Information); // Log SQL commands
+           .EnableSensitiveDataLogging() 
+           .LogTo(Console.WriteLine, LogLevel.Information); 
 });
 
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();             // Thêm dịch vụ để hiển thị lỗi phát triển trong trang web
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -30,7 +30,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireUppercase = false;
     options.Password.RequireLowercase = false;
     options.User.RequireUniqueEmail = true;
-}).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+}).AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();     
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
